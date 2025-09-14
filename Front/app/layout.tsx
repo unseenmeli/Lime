@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const outfit = Outfit({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -24,10 +19,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className={`${outfit.className} antialiased`}>
+        <div className="min-h-screen flex flex-col">
+          <main className="flex-1">{children}</main>
+          <div className="flex flex-1 sticky max-h-20 z-0 justify-center">
+            <footer className="border-t-2 border-gray-300 w-2/3 h-20 z-50 flex items-center">
+              <audio controls className="w-full max-w-md mx-auto block">
+                <source src="/strangers.mp3" type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
+            </footer>
+          </div>
+        </div>
       </body>
     </html>
   );
