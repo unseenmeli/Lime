@@ -5,6 +5,7 @@ import "./globals.css";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import AudioPlayer from "./components/AudioPlayer";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -92,12 +93,9 @@ export default function RootLayout({
           <main className="flex-1 flex justify-center">
             <div className="w-2/3">{children}</div>
           </main>
-          <div className="flex flex-1 sticky max-h-20 z-0 justify-center">
-            <footer className="border-t-2 border-gray-300 w-2/3 h-20 z-50 flex items-center">
-              <audio controls className="w-full max-w-md mx-auto block">
-                <source src="/strangers.mp3" type="audio/mpeg" />
-                Your browser does not support the audio element.
-              </audio>
+          <div className="flex sticky bottom-0 z-50 justify-center">
+            <footer className="border-t-2 border-gray-300 w-2/3 h-20 flex items-center">
+              <AudioPlayer />
             </footer>
           </div>
         </div>
