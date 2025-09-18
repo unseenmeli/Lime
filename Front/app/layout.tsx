@@ -3,9 +3,10 @@
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import Image from "next/image";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import AudioPlayer from "./components/AudioPlayer";
+import { authService } from "./services/api";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -18,8 +19,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const authenticated = authService.isAuthenticated();
+      setIsAuthenticated(authenticated);
+      if (authenticated) {
+        setUser(authService.getUser());
+      }
+    };
+
+    checkAuth();
+  }, [pathname]);
 
   const navigateTo = useCallback(
     (page: string) => {
@@ -35,6 +50,13 @@ export default function RootLayout({
   const handleHover = useCallback((element: string | null) => {
     setHoveredElement(element);
   }, []);
+
+  const handleSignOut = async () => {
+    await authService.logout();
+    setIsAuthenticated(false);
+    setUser(null);
+    router.push("/");
+  };
 
   return (
     <html lang="en">
@@ -87,35 +109,69 @@ export default function RootLayout({
                 </div>
               </div>
               <div className="justify-end items-end h-30 flex">
-                <div
-                  className="flex justify-center items-end cursor-pointer"
-                  onMouseEnter={() => handleHover("login")}
-                  onMouseLeave={() => handleHover(null)}
-                  onClick={() => navigateTo("login")}
-                >
-                  <h1 className="text-xl py-3">login</h1>
-                  <div
-                    className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
-                      hoveredElement === "login" ? "opacity-100" : "opacity-0"
-                    }`}
-                  ></div>
-                </div>
+                {isAuthenticated ? (
+                  <>
+                    <div
+                      className="flex justify-center items-end cursor-pointer"
+                      onMouseEnter={() => handleHover("signout")}
+                      onMouseLeave={() => handleHover(null)}
+                      onClick={handleSignOut}
+                    >
+                      <h1 className="text-xl py-3 whitespace-nowrap">sign out</h1>
+                      <div
+                        className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-20 transition-opacity duration-300 ${
+                          hoveredElement === "signout" ? "opacity-100" : "opacity-0"
+                        }`}
+                      ></div>
+                    </div>
 
-                <div
-                  className="flex justify-center items-end cursor-pointer"
-                  onMouseEnter={() => handleHover("register")}
-                  onMouseLeave={() => handleHover(null)}
-                  onClick={() => navigateTo("register")}
-                >
-                  <h1 className="text-xl px-10 py-3">register</h1>
-                  <div
-                    className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
-                      hoveredElement === "register"
-                        ? "opacity-100"
-                        : "opacity-0"
-                    }`}
-                  ></div>
-                </div>
+                    <div
+                      className="flex justify-center items-end cursor-pointer"
+                      onMouseEnter={() => handleHover("profile")}
+                      onMouseLeave={() => handleHover(null)}
+                      onClick={() => navigateTo("profile")}
+                    >
+                      <h1 className="text-xl px-10 py-3">profile</h1>
+                      <div
+                        className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
+                          hoveredElement === "profile" ? "opacity-100" : "opacity-0"
+                        }`}
+                      ></div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      className="flex justify-center items-end cursor-pointer"
+                      onMouseEnter={() => handleHover("login")}
+                      onMouseLeave={() => handleHover(null)}
+                      onClick={() => navigateTo("login")}
+                    >
+                      <h1 className="text-xl py-3">login</h1>
+                      <div
+                        className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
+                          hoveredElement === "login" ? "opacity-100" : "opacity-0"
+                        }`}
+                      ></div>
+                    </div>
+
+                    <div
+                      className="flex justify-center items-end cursor-pointer"
+                      onMouseEnter={() => handleHover("register")}
+                      onMouseLeave={() => handleHover(null)}
+                      onClick={() => navigateTo("register")}
+                    >
+                      <h1 className="text-xl px-10 py-3">register</h1>
+                      <div
+                        className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
+                          hoveredElement === "register"
+                            ? "opacity-100"
+                            : "opacity-0"
+                        }`}
+                      ></div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
