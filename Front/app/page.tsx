@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Login from "./components/login";
 import HomePage from "./components/HomePage";
 import RegisterPage from "./components/RegisterPage";
+import ProfilePage from "./components/ProfilePage";
 
 export default function Home() {
   const pathname = usePathname();
@@ -14,6 +15,10 @@ export default function Home() {
 
   if (pathname === "/register") {
     return <RegisterPage />;
+  }
+
+  if (pathname === "/profile") {
+    return <ProfilePage />;
   }
 
   return <HomePage />;
