@@ -20,6 +20,8 @@ export default function RootLayout({
   const [isHovered, setIsHovered] = useState(false);
   const [loginHovered, setLoginHovered] = useState(false);
   const [registerHovered, setRegisterHovered] = useState(false);
+  const [searchIsHovered, setSearchIsHovered] = useState(false);
+  const [searchBarIsHovered, setSearchBarIsHovered] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -59,7 +61,29 @@ export default function RootLayout({
                   }`}
                 ></div>
               </div>
-              <div className="justify-end items-end h-30 w-full flex">
+              <div className="w-full h-full flex items-end">
+                <div className="flex-1 py-0.5 flex-row flex items-center gap-2">
+                  <h1
+                    className={`text-4xl cursor-pointer transition-colors duration-200 ${
+                      searchIsHovered ? "text-gray-400" : null
+                    }`}
+                    onMouseEnter={() => setSearchIsHovered(true)}
+                    onMouseLeave={() => setSearchIsHovered(false)}
+                  >
+                    ⌕
+                  </h1>
+                  <input
+                    type="text"
+                    placeholder="Search here..."
+                    className={`px-2 py-3 border-2 w-11/12 h-8 border-black rounded-lg bg-black/5 cursor-text transition-opacity duration-200 focus:outline-none focus:border-black ${
+                      searchBarIsHovered ? "opacity-50" : null
+                    }`}
+                    onMouseEnter={() => setSearchBarIsHovered(true)}
+                    onMouseLeave={() => setSearchBarIsHovered(false)}
+                  />
+                </div>
+              </div>
+              <div className="justify-end items-end h-30 flex">
                 <div
                   className="flex justify-center items-end cursor-pointer"
                   onMouseEnter={() => setLoginHovered(true)}
