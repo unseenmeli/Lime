@@ -13,7 +13,7 @@ export default function HomePage() {
             className="w-120 -my-15 h-auto opacity-70 absolute -z-10"
           />
           <div className="h-60 flex justify-center flex-col px-10 gap-4">
-            <p className="font-bold text-3xl w-20">upcoming events!</p>
+            <p className="font-bold text-5xl w-20">upcoming events!</p>
             <p>upcoming music events in georgia.</p>
             <button
               className="bg-black w-40 h-15 rounded-lg text-white active:opacity-70 transition-opacity duration-200"
@@ -23,7 +23,7 @@ export default function HomePage() {
             </button>
           </div>
           <div className="h-60 flex justify-center flex-col px-10 gap-4">
-            <p className="font-bold text-3xl">discover rising music!</p>
+            <p className="font-bold text-5xl">discover rising music!</p>
             <p>find artists you might be interested in.</p>
             <button
               className="bg-black w-40 h-15 rounded-lg text-white active:opacity-70 transition-opacity duration-200"
@@ -63,9 +63,57 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      <div className=" w-full h-100">
+      <div className=" w-full h-200">
         <hr className="scale-y-300" />
-        <p>here will be the scroll thing</p>
+        <div className="h-full p-2">
+          <div>
+            <p className="w-100 font-bold text-3xl hover:opacity-50 cursor-pointer ">
+              artists which you may like →
+            </p>
+            <div className="flex flex-row items-center relative">
+              <div className="w-60 pt-3">
+                <img
+                  className="w-30 h-30 rounded-full border-2 border-gray-500"
+                  src="/pfp.png"
+                />
+                <p className="font-bold text-2xl break-all">unseenmeli</p>
+              </div>
+              <div className="w-60 pt-3">
+                <img
+                  className="w-30 h-30 rounded-full border-2 border-gray-500"
+                  src="/pfp.png"
+                />
+                <p className="font-bold text-2xl break-all">unseenmeli</p>
+              </div>
+              <div className="w-60 pt-3">
+                <img
+                  className="w-30 h-30 rounded-full border-2 border-gray-500"
+                  src="/pfp.png"
+                />
+                <p className="font-bold text-2xl break-all">unseenmeli</p>
+              </div>
+              <div className="w-60 pt-3">
+                <img
+                  className="w-30 h-30 rounded-full border-2 border-gray-500"
+                  src="/pfp.png"
+                />
+                <p className="font-bold text-2xl break-all">unseenmeli</p>
+              </div>
+              <div className="absolute bg-gradient-to-r from-white to-blue-100 w-75 h-50 right-0 -z-10 overflow-hidden">
+                <img
+                  src="/splash.png"
+                  className="w-full h-full object-cover opacity-40"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-white to-white/0"></div>
+              </div>
+              <div className="flex items-center justify-center w-32 h-50">
+                <p className="text-6xl font-bold -rotate-90 whitespace-nowrap hover:opacity-70 cursor-pointer transition-opacity duration-200">
+                  MORE
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div className="w-full bg-gray-100 border-t-2 border-gray-300 py-8">
         <div className="flex flex-col items-center gap-6">
