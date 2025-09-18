@@ -33,7 +33,31 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
     
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email", "role")
+
+
+class PublicUserSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+    is_following = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "role", "profile_picture", "follower_count", "is_following")
+
+    def get_profile_picture(self, obj):
+        # return absolute URL or None
+        request = self.context.get("request")
+        if obj.profile_picture and hasattr(obj.profile_picture, "url"):
+            url = obj.profile_picture.url
+            return request.build_absolute_uri(url) if request else url
+        return None
+
+    def get_is_following(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.followers.filter(pk=request.user.pk).exists()

@@ -29,108 +29,188 @@ interface AuthResponse {
   password?: string | string[];
   password2?: string | string[];
 }
-
 export const authService = {
+  // ---------- storage helpers ----------
+  setTokens(access: string, refresh: string) {
+    localStorage.setItem("accessToken", access);
+    localStorage.setItem("refreshToken", refresh);
+  },
+  clearTokens() {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+  },
+  setUser(user: any) {
+    localStorage.setItem("user", JSON.stringify(user));
+  },
+  clearUser() {
+    localStorage.removeItem("user");
+  },
+
+  getAccessToken() {
+    return localStorage.getItem("accessToken");
+  },
+  getRefreshToken() {
+    return localStorage.getItem("refreshToken");
+  },
+  getUser() {
+    const userStr = localStorage.getItem("user");
+    return userStr ? JSON.parse(userStr) : null;
+  },
+  isAuthenticated() {
+    return !!this.getAccessToken();
+  },
+
+  // ---------- refresh flow ----------
+  async refresh(): Promise<boolean> {
+    const refresh = this.getRefreshToken();
+    if (!refresh) return false;
+
+    const res = await fetch(`${API_BASE_URL}/refresh/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh }),
+    });
+
+    if (!res.ok) {
+      // refresh invalid/expired/blacklisted -> full logout
+      await this.logout();
+      return false;
+    }
+
+    const data = await res.json();
+    // With ROTATE_REFRESH_TOKENS=True, server may return a new refresh
+    const newAccess = data.access as string;
+    const newRefresh = (data.refresh as string) ?? refresh;
+    this.setTokens(newAccess, newRefresh);
+    return true;
+  },
+
+  // ---------- auth actions ----------
   async login(data: LoginData): Promise<AuthResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/login/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       const result = await response.json();
-      console.log('API Login Response:', result, 'Status:', response.status);
+      console.log("API Login Response:", result, "Status:", response.status);
 
       if (response.ok && result.access) {
-        localStorage.setItem('accessToken', result.access);
-        localStorage.setItem('refreshToken', result.refresh);
+        this.setTokens(result.access, result.refresh);
 
-        const userResponse = await fetch(`${API_BASE_URL}/me/`, {
-          headers: {
-            'Authorization': `Bearer ${result.access}`,
-          },
+        // fetch user using fresh access
+        const userRes = await fetch(`${API_BASE_URL}/me/`, {
+          headers: { Authorization: `Bearer ${result.access}` },
         });
-
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          localStorage.setItem('user', JSON.stringify(userData));
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          this.setUser(userData);
         }
       }
 
       return result;
     } catch (error) {
-      console.error('Login error:', error);
-      return { error: 'Network error. Please try again.' };
+      console.error("Login error:", error);
+      return { error: "Network error. Please try again." };
     }
   },
 
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/register/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       const result = await response.json();
-      console.log('API Register Response:', result, 'Status:', response.status);
+      console.log("API Register Response:", result, "Status:", response.status);
 
       if (response.ok && result.access) {
-        localStorage.setItem('accessToken', result.access);
-        localStorage.setItem('refreshToken', result.refresh);
-        localStorage.setItem('user', JSON.stringify(result.user));
+        this.setTokens(result.access, result.refresh);
+        this.setUser(result.user);
       }
 
       return result;
     } catch (error) {
-      console.error('Registration error:', error);
-      return { error: 'Network error. Please try again.' };
+      console.error("Registration error:", error);
+      return { error: "Network error. Please try again." };
     }
   },
 
   async logout() {
-    const refreshToken = localStorage.getItem('refreshToken');
-    const accessToken = localStorage.getItem('accessToken');
+    const refreshToken = this.getRefreshToken();
+    const accessToken = this.getAccessToken();
 
     if (refreshToken && accessToken) {
       try {
         await fetch(`${API_BASE_URL}/logout/`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({ refresh: refreshToken }),
         });
       } catch (error) {
-        console.error('Logout error:', error);
+        console.error("Logout error:", error);
       }
     }
 
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    this.clearTokens();
+    this.clearUser();
   },
-
-  getAccessToken() {
-    return localStorage.getItem('accessToken');
-  },
-
-  getRefreshToken() {
-    return localStorage.getItem('refreshToken');
-  },
-
-  getUser() {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
-  },
-
-  isAuthenticated() {
-    return !!this.getAccessToken();
-  }
 };
+
+export async function fetchWithAuth(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers || {});
+  const token = authService.getAccessToken();
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+
+  let res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+
+  if (res.status === 401 && authService.getRefreshToken()) {
+    const ok = await authService.refresh();
+    if (ok) {
+      const retryHeaders = new Headers(init.headers || {});
+      const newToken = authService.getAccessToken();
+      if (newToken) retryHeaders.set("Authorization", `Bearer ${newToken}`);
+      if (!retryHeaders.has("Content-Type")) retryHeaders.set("Content-Type", "application/json");
+      res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers: retryHeaders });
+    }
+  }
+
+  return res;
+}
+
+
+export const userService = {
+  async searchUsers(q: string) {
+    const res = await fetchWithAuth(`/users/search/?q=${encodeURIComponent(q)}`, { method: "GET" });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+  async follow(username: string) {
+    const res = await fetchWithAuth(`/users/${encodeURIComponent(username)}/follow/`, { method: "POST" });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+  async unfollow(username: string) {
+    const res = await fetchWithAuth(`/users/${encodeURIComponent(username)}/follow/`, { method: "DELETE" });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+  async getUser(username: string) {
+  const res = await fetchWithAuth(`/users/${encodeURIComponent(username)}/`, { method: "GET" });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json() as Promise<{
+    id: number; username: string; role: string;
+    profile_picture: string | null; follower_count: number; is_following: boolean;
+  }>;
+},
+
+};
+
