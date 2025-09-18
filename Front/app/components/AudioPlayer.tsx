@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
 interface Track {
   id: number;
@@ -24,22 +24,20 @@ export default function AudioPlayer() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.7);
-  const [waveformData, setWaveformData] = useState<number[]>([]);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [waveformData, setWaveformData] = useState<number[]>([]);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const currentTrack = tracks[currentTrackIndex];
 
   useEffect(() => {
-    const generateWaveform = () => {
-      const bars = 65;
-      const data = [];
-      for (let i = 0; i < bars; i++) {
-        data.push(Math.random() * 0.7 + 0.3);
-      }
-      setWaveformData(data);
-    };
-    generateWaveform();
+    const bars = 65;
+    const data = [];
+    for (let i = 0; i < bars; i++) {
+      data.push(Math.random() * 0.7 + 0.3);
+    }
+    setWaveformData(data);
   }, [currentTrackIndex]);
 
   useEffect(() => {
@@ -50,6 +48,7 @@ export default function AudioPlayer() {
       setCurrentTime(audio.currentTime);
       if (audio.duration && !isNaN(audio.duration)) {
         setDuration(audio.duration);
+        setProgress(audio.currentTime / audio.duration);
       }
     };
 
@@ -159,13 +158,12 @@ export default function AudioPlayer() {
           <div className="relative h-8">
             <div className="flex items-center h-full gap-[1px] pointer-events-none">
               {waveformData.map((height, index) => {
-                const progress = duration > 0 ? currentTime / duration : 0;
                 const barPosition = index / waveformData.length;
                 const isPlayed = barPosition < progress;
                 return (
                   <div
                     key={index}
-                    className="flex-1 bg-gray-400 transition-colors"
+                    className="flex-1 transition-colors"
                     style={{
                       height: `${height * 100}%`,
                       backgroundColor: isPlayed ? "#374151" : "#9CA3AF",
