@@ -1,11 +1,15 @@
-from rest_framework import permissions, status
+from rest_framework import permissions, status, viewsets, mixins, decorators, response
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
-from .serializers import RegisterSerializer, UserSerializer, PublicUserSerializer
+from .serializers import RegisterSerializer, UserSerializer, PublicUserSerializer, SongSerializer
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.shortcuts import get_object_or_404
+from .models import Song
+from .permissions import IsOwnerOrReadOnly
+from django.db.models import Q
 
 User = get_user_model()
 
@@ -108,3 +112,41 @@ class UserDetailView(RetrieveAPIView):
         ctx = super().get_serializer_context()
         ctx["request"] = self.request
         return ctx
+    
+
+class SongViewSet(viewsets.ModelViewSet):
+    """
+    /api/songs/           (GET list, POST create)
+    /api/songs/{id}/      (GET retrieve, PUT/PATCH owner-only, DELETE owner-only)
+
+    Public: list returns public songs + your own private ones if logged-in.
+    """
+    serializer_class = SongSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    parser_classes = (MultiPartParser, FormParser)   
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            return Song.objects.filter(Q(is_public=True) | Q(owner=user))
+        return Song.objects.filter(is_public=True)
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["request"] = self.request
+        return ctx
+
+    def perform_create(self, serializer):
+        serializer.save()  # owner set in serializer.create()
+
+    @decorators.action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def like(self, request, pk=None):
+        song = self.get_object()
+        song.likes.add(request.user)
+        return response.Response({"likes": song.likes.count()}, status=status.HTTP_200_OK)
+
+    @decorators.action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def unlike(self, request, pk=None):
+        song = self.get_object()
+        song.likes.remove(request.user)
+        return response.Response({"likes": song.likes.count()}, status=status.HTTP_200_OK)
