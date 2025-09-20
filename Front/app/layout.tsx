@@ -24,6 +24,7 @@ export default function RootLayout({
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const [profileHover, setProfileHover] = useState(true);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -122,11 +123,46 @@ export default function RootLayout({
 
                     <div
                       className="flex justify-center items-end cursor-pointer"
-                      onMouseEnter={() => handleHover("profile")}
-                      onMouseLeave={() => handleHover(null)}
-                      onClick={() => navigateTo("profile")}
+                      onMouseEnter={() => {
+                        handleHover("profile");
+                        setProfileHover(true);
+                      }}
+                      onMouseLeave={() => {
+                        handleHover(null);
+                        setProfileHover(false);
+                      }}
                     >
-                      <h1 className="text-xl px-10 py-3">profile</h1>
+                      <h1
+                        className="text-xl px-10 py-3"
+                        onClick={() => navigateTo("profile")}
+                      >
+                        profile
+                      </h1>
+                      {profileHover && (
+                        <div className="absolute translate-y-62 w-30 h-60 bg-white border-2 border-gray-300 flex flex-col">
+                          <div className="pt-5 flex-1 flex flex-col items-center border-b-1 pb-1 border-gray-300">
+                            <img
+                              className="w-20 rounded-full"
+                              src="muse.jpeg"
+                            />
+                            <p>unseenmeli</p>
+                          </div>
+                          <div className="flex-1 flex flex-col pt-2">
+                            <div className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200">
+                              <img className="w-4 h-4" src="user.png" />
+                              <p>profile</p>
+                            </div>
+                            <div className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200">
+                              <img className="w-4 h-4" src="sleep-mode.png" />
+                              <p>theme</p>
+                            </div>
+                            <div className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200">
+                              <img className="w-4 h-4" src="setting.png" />
+                              <p>settings</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div
                         className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
                           hoveredElement === "profile"
