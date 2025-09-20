@@ -1,24 +1,19 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react"; // CHANGED: removed unused useMemo
+import { songService } from "../services/api";
 
-interface Track {
+type Track = {
   id: number;
   title: string;
   artist: string;
   url: string;
-}
-
-const tracks: Track[] = [
-  {
-    id: 1,
-    title: "Strangers",
-    artist: "Unknown",
-    url: "/strangers.mp3",
-  },
-];
+  cover: string | null;
+};
 
 export default function AudioPlayer() {
+  const [tracks, setTracks] = useState<Track[]>([]); // NEW
+
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -29,11 +24,87 @@ export default function AudioPlayer() {
   const [waveformData, setWaveformData] = useState<number[]>([]);
 
   const audioRef = useRef<HTMLAudioElement>(null);
-  const currentTrack = tracks[currentTrackIndex];
+
+  const currentTrack = tracks[currentTrackIndex] || {
+    id: 0,
+    title: "Loading…",
+    artist: "",
+    url: "",
+  };
+
+  useEffect(() => {
+    // NEW
+    let cancelled = false;
+    (async () => {
+      try {
+        const songs = await songService.listSongs(); // GET /songs/
+        if (cancelled) return;
+        const mapped: Track[] = songs.map((s: any) => ({
+          id: s.id,
+          title: s.title,
+          artist: s.owner?.username ?? "Unknown",
+          url: s.audio,
+          cover: s.cover,
+        }));
+        setTracks(mapped);
+        setCurrentTrackIndex(0);
+      } catch (e) {
+        console.error("Failed to load songs:", e);
+        setTracks([]); // keep empty; UI stays same
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    function onExternalPlay(e: Event) {
+      const custom = e as CustomEvent<{
+        queue: {
+          id: number;
+          title: string;
+          artist: string;
+          url: string;
+          cover?: string | null;
+        }[];
+        startId?: number;
+      }>;
+      const detail = custom.detail;
+      if (!detail || !Array.isArray(detail.queue) || detail.queue.length === 0)
+        return;
+
+      const newQueue = detail.queue;
+      const idx = detail.startId
+        ? newQueue.findIndex((t) => t.id === detail.startId)
+        : 0;
+
+      const normalized: Track[] = newQueue.map((t) => ({
+        ...t,
+        cover: t.cover ?? null,
+      }));
+      setTracks(normalized);
+
+      setCurrentTrackIndex(idx >= 0 ? idx : 0);
+      setIsPlaying(true);
+
+      // start playback after state updates
+      setTimeout(() => {
+        audioRef.current?.play().catch(() => {});
+      }, 0);
+    }
+
+    window.addEventListener("player:play", onExternalPlay as EventListener);
+    return () =>
+      window.removeEventListener(
+        "player:play",
+        onExternalPlay as EventListener
+      );
+  }, []);
 
   useEffect(() => {
     const bars = 65;
-    const data = [];
+    const data: number[] = [];
     for (let i = 0; i < bars; i++) {
       data.push(Math.random() * 0.7 + 0.3);
     }
@@ -76,7 +147,7 @@ export default function AudioPlayer() {
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch(() => {}); // CHANGED: guard play promise
     }
     setIsPlaying(!isPlaying);
   };
@@ -98,18 +169,20 @@ export default function AudioPlayer() {
   };
 
   const nextTrack = () => {
+    if (tracks.length === 0) return; // NEW: avoid modulo 0
     setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
     setIsPlaying(true);
     setTimeout(() => {
-      audioRef.current?.play();
+      audioRef.current?.play().catch(() => {}); // CHANGED: guard play
     }, 100);
   };
 
   const previousTrack = () => {
+    if (tracks.length === 0) return; // NEW: avoid modulo 0
     setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
     setIsPlaying(true);
     setTimeout(() => {
-      audioRef.current?.play();
+      audioRef.current?.play().catch(() => {}); // CHANGED: guard play
     }, 100);
   };
 
@@ -122,7 +195,11 @@ export default function AudioPlayer() {
 
   return (
     <div className="flex items-center w-full h-full px-4">
-      <audio ref={audioRef} src={currentTrack.url} onEnded={nextTrack} />
+      <audio
+        ref={audioRef}
+        src={currentTrack?.url || undefined}
+        onEnded={nextTrack}
+      />
 
       <div className="flex items-center gap-2">
         <button
@@ -192,6 +269,17 @@ export default function AudioPlayer() {
           </div>
         </div>
       </div>
+      {currentTrack?.cover ? (
+        <img
+          src={currentTrack.cover}
+          alt={`${currentTrack.title} cover`}
+          className="w-14 h-14 rounded mr-4 object-cover"
+        />
+      ) : (
+        <div className="w-14 h-14 rounded mr-4 bg-gray-200 flex items-center justify-center text-gray-500">
+          ♪
+        </div>
+      )}
 
       <div className="relative flex items-center">
         <button
@@ -212,27 +300,23 @@ export default function AudioPlayer() {
               </span>
               <div className="relative w-full py-2">
                 <div className="relative h-1">
-                  {/* Background track */}
                   <div className="absolute inset-0 bg-gray-200 rounded-full" />
-                  {/* Active track */}
                   <div
                     className="absolute inset-y-0 left-0 rounded-full"
                     style={{
                       width: `${volume * 100}%`,
-                      background: 'linear-gradient(to right, #C3D772, #a3c054)',
-                      transition: 'none'
+                      background: "linear-gradient(to right, #C3D772, #a3c054)",
+                      transition: "none",
                     }}
                   />
-                  {/* Thumb */}
                   <div
                     className="absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white border-2 border-gray-400 rounded-full shadow-sm hover:border-gray-500 pointer-events-none"
                     style={{
                       left: `${volume * 100}%`,
-                      transition: 'none'
+                      transition: "none",
                     }}
                   />
                 </div>
-                {/* Invisible input - covers full clickable area */}
                 <input
                   type="range"
                   min="0"

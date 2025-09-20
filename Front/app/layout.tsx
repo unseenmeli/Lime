@@ -124,12 +124,31 @@ export default function RootLayout({
                       className="flex justify-center items-end cursor-pointer"
                       onMouseEnter={() => handleHover("profile")}
                       onMouseLeave={() => handleHover(null)}
-                      onClick={() => navigateTo("profile")}
+                      onClick={() => {
+                        if (user?.username) {
+                          router.push(`/u/${user.username}`);
+                        }
+                      }}
                     >
                       <h1 className="text-xl px-10 py-3">profile</h1>
                       <div
                         className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
                           hoveredElement === "profile"
+                            ? "opacity-100"
+                            : "opacity-0"
+                        }`}
+                      ></div>
+                    </div>
+                    <div
+                      className="flex justify-center items-end cursor-pointer"
+                      onMouseEnter={() => handleHover("post")}
+                      onMouseLeave={() => handleHover(null)}
+                      onClick={() => navigateTo("post")}
+                    >
+                      <h1 className="text-xl px-10 py-3">post</h1>
+                      <div
+                        className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
+                          hoveredElement === "post"
                             ? "opacity-100"
                             : "opacity-0"
                         }`}

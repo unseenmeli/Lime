@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.utils.html import format_html
-from .models import User
+from .models import User, Song
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
@@ -49,3 +49,9 @@ class UserAdmin(DjangoUserAdmin):
                 count += 1
         self.message_user(request, f"Recalculated follower_count for {count} user(s).")
     recalculate_follower_counts.short_description = "Recalculate follower counts for selected users"
+
+@admin.register(Song)
+class SongAdmin(admin.ModelAdmin):
+    list_display = ("title", "owner", "is_public", "plays", "created_at")
+    search_fields = ("title", "owner__username")
+    list_filter = ("is_public", "created_at")

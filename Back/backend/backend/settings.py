@@ -63,6 +63,11 @@ REST_FRAMEWORK = {
     # For a simple start: allow public endpoints by default.
     # Lock down specific views with IsAuthenticated (we will for /me and /logout).
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ],
 }
 
 SIMPLE_JWT = {

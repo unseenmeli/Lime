@@ -119,7 +119,6 @@ export default function SearchBox({
       {/* Quick results dropdown */}
       {open && (
         <div className="absolute left-8 right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-md max-h-72 overflow-auto">
-          {loading && <div className="p-3 text-sm">searching</div>}
           {err && <div className="p-3 text-sm text-red-600">{err}</div>}
           {!loading && !err && results.length === 0 && q.trim().length >= 2 && (
             <div className="p-3 text-sm text-gray-500">No matches</div>
