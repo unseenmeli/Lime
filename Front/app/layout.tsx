@@ -25,6 +25,7 @@ export default function RootLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [profileHover, setProfileHover] = useState(true);
+  const [themeSetting, setThemeSetting] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -130,11 +131,7 @@ export default function RootLayout({
                       onMouseLeave={() => {
                         handleHover(null);
                         setProfileHover(false);
-                      onClick={() => {
-                        if (user?.username) {
-                          router.push(`/u/${user.username}`);
-                        }
-
+                        setThemeSetting(false);
                       }}
                     >
                       <h1
@@ -153,14 +150,30 @@ export default function RootLayout({
                             <p>unseenmeli</p>
                           </div>
                           <div className="flex-1 flex flex-col pt-2">
-                            <div className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200">
+                            <div
+                              className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200"
+                              onClick={() => navigateTo("profile")}
+                            >
                               <img className="w-4 h-4" src="user.png" />
                               <p>profile</p>
                             </div>
-                            <div className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200">
+                            <div
+                              className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200"
+                              onClick={() => setThemeSetting(true)}
+                            >
                               <img className="w-4 h-4" src="sleep-mode.png" />
                               <p>theme</p>
                             </div>
+                            {themeSetting && (
+                              <div className="w-30 h-14 absolute bg-white flex flex-col translate-x-28 translate-y-4.5 border-t-2 border-r-2 border-b-2 border-gray-300 -z-50">
+                                <div className="flex justify-center hover:bg-gray-200">
+                                  <p>dark</p>
+                                </div>
+                                <div className="flex justify-center hover:bg-gray-200">
+                                  <p>light</p>
+                                </div>
+                              </div>
+                            )}
                             <div className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200">
                               <img className="w-4 h-4" src="setting.png" />
                               <p>settings</p>
