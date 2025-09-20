@@ -22,6 +22,18 @@ export default function AudioPlayer() {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [progress, setProgress] = useState(0);
   const [waveformData, setWaveformData] = useState<number[]>([]);
+  const [settingsForMusic, setSettingsForMusic] = useState(false);
+  const [eqVolume, setEqVolume] = useState(70);
+  const [eqBands, setEqBands] = useState<{ [key: string]: number }>({
+    "60Hz": 50,
+    "250Hz": 50,
+    "1kHz": 50,
+    "4kHz": 50,
+    "8kHz": 50,
+    "16kHz": 50,
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [eqPosition, setEqPosition] = useState({ x: 0, y: 0 });
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -101,6 +113,13 @@ export default function AudioPlayer() {
         onExternalPlay as EventListener
       );
   }, []);
+  const eqPanelRef = useRef<HTMLDivElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const filtersRef = useRef<BiquadFilterNode[]>([]);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const currentTrack = tracks[currentTrackIndex];
 
   useEffect(() => {
     const bars = 65;
@@ -110,6 +129,110 @@ export default function AudioPlayer() {
     }
     setWaveformData(data);
   }, [currentTrackIndex]);
+
+  // Dragging functionality
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      const deltaX = e.clientX - dragStartRef.current.x;
+      const deltaY = e.clientY - dragStartRef.current.y;
+
+      setEqPosition({ x: deltaX, y: deltaY });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "move";
+    } else {
+      document.body.style.cursor = "";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+    };
+  }, [isDragging]);
+
+  const initializeAudioContext = () => {
+    if (!audioRef.current || audioContextRef.current) return;
+
+    try {
+      const AudioContext =
+        window.AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+
+      const source = audioContext.createMediaElementSource(audioRef.current);
+      sourceRef.current = source;
+
+      const gainNode = audioContext.createGain();
+      gainNodeRef.current = gainNode;
+      gainNode.gain.value = volume;
+
+      const frequencies = [60, 250, 1000, 4000, 8000, 16000];
+      const filters: BiquadFilterNode[] = [];
+
+      frequencies.forEach((freq, index) => {
+        const filter = audioContext.createBiquadFilter();
+        if (index === 0) {
+          filter.type = "lowshelf";
+        } else if (index === frequencies.length - 1) {
+          filter.type = "highshelf";
+        } else {
+          filter.type = "peaking";
+        }
+        filter.frequency.value = freq;
+        filter.Q.value = 1;
+        filter.gain.value = 0;
+        filters.push(filter);
+      });
+
+      filtersRef.current = filters;
+
+      // Connect the audio graph
+      let lastNode: AudioNode = source;
+      filters.forEach((filter) => {
+        lastNode.connect(filter);
+        lastNode = filter;
+      });
+      lastNode.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+    } catch (error) {
+      console.error("Web Audio API initialization error:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!filtersRef.current.length) return;
+
+    const frequencies = ["60Hz", "250Hz", "1kHz", "4kHz", "8kHz", "16kHz"];
+    frequencies.forEach((freq, index) => {
+      const filter = filtersRef.current[index];
+      if (filter) {
+        const value = eqBands[freq];
+        const gain = ((value - 50) / 50) * 12;
+        filter.gain.value = gain;
+      }
+    });
+  }, [eqBands]);
+
+  useEffect(() => {
+    const volumeValue = eqVolume / 100;
+    setVolume(volumeValue);
+    if (audioRef.current) {
+      audioRef.current.volume = volumeValue;
+    }
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = volumeValue;
+    }
+  }, [eqVolume]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -163,8 +286,12 @@ export default function AudioPlayer() {
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
+    setEqVolume(Math.round(newVolume * 100));
     if (audioRef.current) {
       audioRef.current.volume = newVolume;
+    }
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = newVolume;
     }
   };
 
@@ -234,20 +361,21 @@ export default function AudioPlayer() {
 
           <div className="relative h-8">
             <div className="flex items-center h-full gap-[1px] pointer-events-none">
-              {waveformData.map((height, index) => {
-                const barPosition = index / waveformData.length;
-                const isPlayed = barPosition < progress;
-                return (
-                  <div
-                    key={index}
-                    className="flex-1 transition-colors"
-                    style={{
-                      height: `${height * 100}%`,
-                      backgroundColor: isPlayed ? "#374151" : "#9CA3AF",
-                    }}
-                  />
-                );
-              })}
+              {waveformData.length > 0 &&
+                waveformData.map((height, index) => {
+                  const barPosition = index / waveformData.length;
+                  const isPlayed = barPosition < progress;
+                  return (
+                    <div
+                      key={index}
+                      className="flex-1 transition-colors"
+                      style={{
+                        height: `${height * 100}%`,
+                        backgroundColor: isPlayed ? "#374151" : "#9CA3AF",
+                      }}
+                    />
+                  );
+                })}
             </div>
             <input
               type="range"
@@ -288,6 +416,210 @@ export default function AudioPlayer() {
         >
           volume
         </button>
+        <button
+          className="text-xl opacity-90 hover:opacity-60"
+          onClick={() => {
+            setSettingsForMusic(true);
+            initializeAudioContext();
+          }}
+        >
+          ⚙
+        </button>
+
+        {settingsForMusic && (
+          <div
+            ref={eqPanelRef}
+            className="fixed bg-white border-2 border-gray-300 p-6 shadow-lg z-150 overflow-hidden"
+            style={{
+              width: "420px",
+              left: `calc(50% + ${eqPosition.x}px)`,
+              top: `calc(50% + ${eqPosition.y}px)`,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <img
+              src="/eq_background.png"
+              className="absolute inset-0 w-180 h-80 object-cover opacity-30 scale-150 -z-10"
+              alt=""
+            />
+            <div className="flex flex-col gap-4 relative z-10">
+              <div
+                className="border-b-2 border-gray-300 pb-3 flex items-center justify-between cursor-move"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                  dragStartRef.current = {
+                    x: e.clientX - eqPosition.x,
+                    y: e.clientY - eqPosition.y,
+                  };
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={previousTrack}
+                      className="text-black hover:text-gray-500 transition-colors text-lg"
+                    >
+                      ◄
+                    </button>
+                    <button
+                      onClick={togglePlayPause}
+                      className="px-2 text-black hover:text-gray-500 transition-colors text-lg"
+                    >
+                      {isPlaying ? "❚❚" : "▶"}
+                    </button>
+                    <button
+                      onClick={nextTrack}
+                      className="text-black hover:text-gray-500 transition-colors text-lg"
+                    >
+                      ►
+                    </button>
+                  </div>
+                  <div className="select-none">
+                    <p className="font-bold text-lg">equalizer</p>
+                    <p className="text-xs text-gray-600">
+                      {currentTrack.title}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="text-2xl hover:opacity-50 transition-opacity"
+                  onClick={() => setSettingsForMusic(false)}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="flex gap-6">
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-xs font-bold">volume</p>
+                  <div className="h-32 w-8 relative flex items-center justify-center">
+                    <div className="absolute h-full w-2 bg-gray-200"></div>
+                    <div
+                      className="absolute h-full w-full cursor-pointer"
+                      onMouseDown={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const updateValue = (clientY: number) => {
+                          const y = clientY - rect.top;
+                          const percentage = 100 - (y / rect.height) * 100;
+                          setEqVolume(
+                            Math.max(0, Math.min(100, Math.round(percentage)))
+                          );
+                        };
+                        updateValue(e.clientY);
+                        const handleMouseMove = (e: MouseEvent) =>
+                          updateValue(e.clientY);
+                        const handleMouseUp = () => {
+                          document.removeEventListener(
+                            "mousemove",
+                            handleMouseMove
+                          );
+                          document.removeEventListener(
+                            "mouseup",
+                            handleMouseUp
+                          );
+                        };
+                        document.addEventListener("mousemove", handleMouseMove);
+                        document.addEventListener("mouseup", handleMouseUp);
+                      }}
+                    ></div>
+                    <div
+                      className="absolute w-4 h-1 bg-black pointer-events-none"
+                      style={{ top: `${100 - eqVolume}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs">{eqVolume}%</p>
+                </div>
+
+                <div className="flex-1 flex justify-around">
+                  {Object.entries(eqBands).map(([freq, value]) => (
+                    <div
+                      key={freq}
+                      className="flex flex-col items-center gap-2"
+                    >
+                      <p className="text-xs">{freq}</p>
+                      <div className="h-32 w-8 relative flex items-center justify-center">
+                        <div className="absolute h-full w-2 bg-gray-200"></div>
+                        <div
+                          className="absolute h-full w-full cursor-pointer"
+                          onMouseDown={(e) => {
+                            const rect =
+                              e.currentTarget.getBoundingClientRect();
+                            const updateValue = (clientY: number) => {
+                              const y = clientY - rect.top;
+                              const percentage = 100 - (y / rect.height) * 100;
+                              const newValue = Math.max(
+                                0,
+                                Math.min(100, Math.round(percentage))
+                              );
+                              setEqBands((prev) => ({
+                                ...prev,
+                                [freq]: newValue,
+                              }));
+                            };
+                            updateValue(e.clientY);
+                            const handleMouseMove = (e: MouseEvent) =>
+                              updateValue(e.clientY);
+                            const handleMouseUp = () => {
+                              document.removeEventListener(
+                                "mousemove",
+                                handleMouseMove
+                              );
+                              document.removeEventListener(
+                                "mouseup",
+                                handleMouseUp
+                              );
+                            };
+                            document.addEventListener(
+                              "mousemove",
+                              handleMouseMove
+                            );
+                            document.addEventListener("mouseup", handleMouseUp);
+                          }}
+                        ></div>
+                        <div
+                          className="absolute w-4 h-1 bg-black pointer-events-none"
+                          style={{ top: `${100 - value}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        {Math.round((value - 50) * 0.24)}dB
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-3 border-t-2 border-gray-300">
+                <div className="flex gap-3">
+                  <button className="text-sm hover:opacity-50 transition-opacity">
+                    presets
+                  </button>
+                  <button
+                    className="text-sm hover:opacity-50 transition-opacity"
+                    onClick={() => {
+                      setEqVolume(70);
+                      setEqBands({
+                        "60Hz": 50,
+                        "250Hz": 50,
+                        "1kHz": 50,
+                        "4kHz": 50,
+                        "8kHz": 50,
+                        "16kHz": 50,
+                      });
+                    }}
+                  >
+                    reset
+                  </button>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4" defaultChecked />
+                  <span className="text-sm">enabled</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showVolumeSlider && (
           <div
