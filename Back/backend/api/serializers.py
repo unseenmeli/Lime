@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from .models import Song
+import os
 
 User = get_user_model()
 
@@ -61,3 +63,48 @@ class PublicUserSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated:
             return False
         return obj.followers.filter(pk=request.user.pk).exists()
+
+
+class OwnerMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "username", "role")
+
+class SongSerializer(serializers.ModelSerializer):
+    owner = OwnerMiniSerializer(read_only=True)
+
+    class Meta:
+        model = Song
+        fields = (
+            "id", "owner", "title", "description",
+            "audio", "cover", "is_public",
+            "duration_seconds", "plays",
+            "created_at",
+        )
+        read_only_fields = ("duration_seconds", "plays", "created_at", "owner")
+
+    def validate_audio(self, f):
+        # very light checks (keep simple)
+        max_mb = 50  # adjust if you want
+        if f.size > max_mb * 1024 * 1024:
+            raise serializers.ValidationError(f"Audio exceeds {max_mb} MB.")
+        ext = os.path.splitext(f.name)[1].lower()
+        if ext not in {".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg"}:
+            raise serializers.ValidationError("Unsupported audio format.")
+        return f
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        song = Song.objects.create(owner=request.user, **validated_data)
+
+        # (Optional) Try to detect duration if mutagen is installed
+        try:
+            from mutagen import File as MutagenFile
+            mf = MutagenFile(song.audio.path)
+            if mf and mf.info and getattr(mf.info, "length", None):
+                song.duration_seconds = int(mf.info.length)
+                song.save(update_fields=["duration_seconds"])
+        except Exception:
+            pass  # keep it optional/silent
+
+        return song

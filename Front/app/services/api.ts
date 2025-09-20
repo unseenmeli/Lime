@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api/auth';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 interface LoginData {
   username: string;
@@ -167,8 +167,14 @@ export const authService = {
 export async function fetchWithAuth(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers || {});
   const token = authService.getAccessToken();
+
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+
+  // ⬇️ Only set JSON Content-Type when NOT sending FormData
+  const isFormData = (init.body && typeof FormData !== "undefined" && init.body instanceof FormData);
+  if (!isFormData && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
   let res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
 
@@ -178,7 +184,12 @@ export async function fetchWithAuth(path: string, init: RequestInit = {}): Promi
       const retryHeaders = new Headers(init.headers || {});
       const newToken = authService.getAccessToken();
       if (newToken) retryHeaders.set("Authorization", `Bearer ${newToken}`);
-      if (!retryHeaders.has("Content-Type")) retryHeaders.set("Content-Type", "application/json");
+
+      const retryIsFormData = (init.body && typeof FormData !== "undefined" && init.body instanceof FormData);
+      if (!retryIsFormData && !retryHeaders.has("Content-Type")) {
+        retryHeaders.set("Content-Type", "application/json");
+      }
+
       res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers: retryHeaders });
     }
   }
@@ -213,4 +224,47 @@ export const userService = {
 },
 
 };
+
+
+export type SongDTO = {
+  id: number;
+  owner: { id: number; username: string; role: string } | null;
+  title: string;
+  description: string;
+  audio: string;
+  cover: string | null;
+  is_public: boolean;
+  duration_seconds: number | null;
+  plays: number;
+  created_at: string;
+};
+
+export const songService = {
+  async listSongs(): Promise<SongDTO[]> {
+    const res = await fetchWithAuth(`/songs/`, { method: "GET" });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async uploadSong(params: {
+    title: string;
+    description?: string;
+    is_public?: boolean;
+    audioFile: File;
+    coverFile?: File | null;
+  }): Promise<SongDTO> {
+    const form = new FormData();
+    form.append("title", params.title);
+    if (params.description) form.append("description", params.description);
+    form.append("is_public", String(params.is_public ?? true));
+    form.append("audio", params.audioFile);
+    if (params.coverFile) form.append("cover", params.coverFile);
+
+    const res = await fetchWithAuth(`/songs/`, { method: "POST", body: form } as RequestInit);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+};
+
+
 

@@ -18,9 +18,9 @@ export default function Home() {
     return <RegisterPage />;
   }
 
-  if (pathname === "/profile") {
-    return <ProfilePage />;
-  }
+  //  if (pathname === "/profile") {
+  //    return <ProfilePage />;
+  //  }
 
   if (pathname === "/search") {
     return <SearchResultsPage />;
