@@ -10,6 +10,10 @@ class User(AbstractUser):
         max_length=20,
         choices=Roles.choices
     )
+    profile_picture = models.ImageField(upload_to="profiles/", blank=True, null=True)
+    following = models.ManyToManyField("self", symmetrical=False, related_name="followers", blank=True)
+    follower_count = models.PositiveIntegerField(default=0)
+
 
     def __str__(self):
         return f"{self.username}"

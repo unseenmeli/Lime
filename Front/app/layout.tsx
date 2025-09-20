@@ -7,6 +7,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import AudioPlayer from "./components/AudioPlayer";
 import { authService } from "./services/api";
+import SearchBox from "./components/SearchBox";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -88,23 +89,13 @@ export default function RootLayout({
               </div>
               <div className="w-full h-full flex items-end">
                 <div className="flex-1 py-0.5 flex-row flex items-center gap-2">
-                  <h1
-                    className={`text-4xl cursor-pointer transition-colors duration-200 ${
-                      hoveredElement === "search" ? "text-gray-400" : ""
-                    }`}
-                    onMouseEnter={() => handleHover("search")}
-                    onMouseLeave={() => handleHover(null)}
-                  >
-                    ⌕
-                  </h1>
-                  <input
-                    type="text"
-                    placeholder="Search here..."
-                    className={`px-2 py-3 border-2 w-11/12 h-8 border-black rounded-lg bg-black/5 cursor-text transition-opacity duration-200 focus:outline-none focus:border-black ${
-                      hoveredElement === "searchBar" ? "opacity-50" : ""
-                    }`}
-                    onMouseEnter={() => handleHover("searchBar")}
-                    onMouseLeave={() => handleHover(null)}
+                  <SearchBox
+                    hoveredElement={hoveredElement}
+                    handleHover={handleHover}
+                    onSelect={(u) => router.push(`/u/${u.username}`)}
+                    onSearch={(q) =>
+                      router.push(`/search?q=${encodeURIComponent(q)}`)
+                    }
                   />
                 </div>
               </div>
@@ -117,10 +108,14 @@ export default function RootLayout({
                       onMouseLeave={() => handleHover(null)}
                       onClick={handleSignOut}
                     >
-                      <h1 className="text-xl py-3 whitespace-nowrap">sign out</h1>
+                      <h1 className="text-xl py-3 whitespace-nowrap">
+                        sign out
+                      </h1>
                       <div
                         className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-20 transition-opacity duration-300 ${
-                          hoveredElement === "signout" ? "opacity-100" : "opacity-0"
+                          hoveredElement === "signout"
+                            ? "opacity-100"
+                            : "opacity-0"
                         }`}
                       ></div>
                     </div>
@@ -134,7 +129,9 @@ export default function RootLayout({
                       <h1 className="text-xl px-10 py-3">profile</h1>
                       <div
                         className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
-                          hoveredElement === "profile" ? "opacity-100" : "opacity-0"
+                          hoveredElement === "profile"
+                            ? "opacity-100"
+                            : "opacity-0"
                         }`}
                       ></div>
                     </div>
@@ -150,7 +147,9 @@ export default function RootLayout({
                       <h1 className="text-xl py-3">login</h1>
                       <div
                         className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
-                          hoveredElement === "login" ? "opacity-100" : "opacity-0"
+                          hoveredElement === "login"
+                            ? "opacity-100"
+                            : "opacity-0"
                         }`}
                       ></div>
                     </div>

@@ -99,4 +99,10 @@ export const api = {
         clearTokens();
         if(!res.ok && res.status !== 205) throw new Error(await res.text());
     },
+
+    async searchUsers(q: string) {
+        const res = await doFetch(`/auth/users/search/?q=${encodeURIComponent(q)}`, { method: "GET" });
+        if (!res.ok) throw new Error(await res.text());
+        return res.json() as Promise<Array<{ id: number; username: string; role: string }>>;
+  },
 };

@@ -3,7 +3,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
-from .serializers import RegisterSerializer, UserSerializer
+from .serializers import RegisterSerializer, UserSerializer, PublicUserSerializer
+from rest_framework.generics import ListAPIView, RetrieveAPIView
+from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
@@ -43,3 +45,66 @@ class LogoutView(APIView):
         except Exception:
             return Response({"detail": "Invalid refresh token."}, status=400)
         return Response(status=205)
+    
+
+class UserSearchView(ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PublicUserSerializer
+
+    def get_queryset(self):
+        q = self.request.query_params.get("q", "").strip()
+        if not q or len(q) < 2:
+            return User.objects.none()
+        return User.objects.filter(username__icontains=q).order_by("username")[:20]
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["request"] = self.request
+        return ctx
+    
+
+class FollowView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, username):
+        # follow user
+        target = get_object_or_404(User, username=username)
+        if target == request.user:
+            return Response({"detail": "You cannot follow yourself."}, status=400)
+        request.user.following.add(target)
+        # follower_count is updated via signal
+        return Response(
+            {
+                "username": target.username,
+                "is_following": True,
+                "follower_count": target.followers.count(),
+            },
+            status=200,
+        )
+
+    def delete(self, request, username):
+        # unfollow user
+        target = get_object_or_404(User, username=username)
+        if target == request.user:
+            return Response({"detail": "You cannot unfollow yourself."}, status=400)
+        request.user.following.remove(target)
+        return Response(
+            {
+                "username": target.username,
+                "is_following": False,
+                "follower_count": target.followers.count(),
+            },
+            status=200,
+        )
+    
+
+class UserDetailView(RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = PublicUserSerializer
+    lookup_field = "username"
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["request"] = self.request
+        return ctx
