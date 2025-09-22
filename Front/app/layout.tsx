@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import AudioPlayer from "./components/AudioPlayer";
 import { authService } from "./services/api";
 import SearchBox from "./components/SearchBox";
+import Login from "./components/login";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -24,8 +25,9 @@ export default function RootLayout({
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const [profileHover, setProfileHover] = useState(true);
+  const [profileHover, setProfileHover] = useState(false);
   const [themeSetting, setThemeSetting] = useState(false);
+  const [loginModal, setLoginModal] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -211,7 +213,7 @@ export default function RootLayout({
                       className="flex justify-center items-end cursor-pointer"
                       onMouseEnter={() => handleHover("login")}
                       onMouseLeave={() => handleHover(null)}
-                      onClick={() => navigateTo("login")}
+                      onClick={() => setLoginModal(true)}
                     >
                       <h1 className="text-xl py-3">login</h1>
                       <div
@@ -244,6 +246,19 @@ export default function RootLayout({
             </div>
           </div>
           <main className="flex-1 flex justify-center pt-16 pb-20">
+            {loginModal && (
+              <div
+                onClick={() => setLoginModal(false)}
+                className="w-screen h-svh fixed top-0 left-0 z-[100] bg-black/50 flex justify-center items-center"
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white w-24rem h-fit z-150 rounded-xl"
+                >
+                  <Login />
+                </div>
+              </div>
+            )}
             <div className="w-2/3">{children}</div>
           </main>
           <div className="flex fixed bottom-0 left-0 right-0 z-30 justify-center bg-white">

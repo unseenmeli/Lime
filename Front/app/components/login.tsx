@@ -52,7 +52,10 @@ export default function Login() {
 
   return (
     <div className="flex-1 flex h-full justify-center items-center">
-      <form onSubmit={handleSubmit} className="border-2 border-gray-300 rounded-lg p-8 w-96">
+      <form
+        onSubmit={handleSubmit}
+        className="border-2 border-gray-300 rounded-lg p-8 w-96"
+      >
         <h1 className="text-2xl mb-6">Login</h1>
 
         {error && (
@@ -90,13 +93,6 @@ export default function Login() {
         </button>
 
         <div className="flex justify-between">
-          <button
-            type="button"
-            onClick={handleBackHome}
-            className="text-gray-500 hover:text-gray-700 cursor-pointer"
-          >
-            ← Back to home
-          </button>
           <button
             type="button"
             className="text-gray-500 hover:text-gray-700 cursor-pointer"
