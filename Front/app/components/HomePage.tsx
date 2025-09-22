@@ -113,8 +113,67 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+          <div className=" w-full h-90">
+            <div className="flex-1">
+              <hr className="scale-y-300"></hr>
+              <p className="pt-2 w-100 font-bold text-3xl hover:opacity-50 cursor-pointer ">
+                trending music →
+              </p>
+              <div className="relative">
+                <div className="h-70 flex gap-10 pt-10">
+                  <div className="flex flex-col items-center">
+                    <img
+                      src="/muse.jpeg"
+                      className="w-40 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                    />
+                    <p className="text-xl font-bold"> cave</p>
+                    <p> muse 2:54 </p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <img
+                      src="/muse.jpeg"
+                      className="w-40 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                    />
+                    <p className="text-xl font-bold"> cave</p>
+                    <p> muse 2:54 </p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <img
+                      src="/muse.jpeg"
+                      className="w-40 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                    />
+                    <p className="text-xl font-bold"> cave</p>
+                    <p> muse 2:54 </p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <img
+                      src="/muse.jpeg"
+                      className="w-40 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                    />
+                    <p className="text-xl font-bold"> cave</p>
+                    <p> muse 2:54 </p>
+                  </div>
+                </div>
+                <div className="absolute right-0 top-10 flex">
+                  <div className="absolute bg-gradient-to-r from-white to-blue-100 w-75 h-50 right-0 -z-10 overflow-hidden">
+                    <img
+                      src="/splash.png"
+                      className="w-full h-full object-cover opacity-40"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white to-white/0"></div>
+                  </div>
+                  <div className="flex items-center justify-center w-32 h-50">
+                    <p className="text-6xl font-bold -rotate-90 whitespace-nowrap hover:opacity-70 cursor-pointer transition-opacity duration-200">
+                      MORE
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
       <div className="w-full bg-gray-100 border-t-2 border-gray-300 py-8">
         <div className="flex flex-col items-center gap-6">
           <div className="flex gap-12">

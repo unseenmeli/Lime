@@ -43,13 +43,27 @@ export default function RegisterPage() {
       if (response.error) {
         setError(response.error);
       } else if (response.username) {
-        setError(Array.isArray(response.username) ? response.username[0] : response.username);
+        setError(
+          Array.isArray(response.username)
+            ? response.username[0]
+            : response.username
+        );
       } else if (response.email) {
-        setError(Array.isArray(response.email) ? response.email[0] : response.email);
+        setError(
+          Array.isArray(response.email) ? response.email[0] : response.email
+        );
       } else if (response.password) {
-        setError(Array.isArray(response.password) ? response.password[0] : response.password);
+        setError(
+          Array.isArray(response.password)
+            ? response.password[0]
+            : response.password
+        );
       } else if (response.password2) {
-        setError(Array.isArray(response.password2) ? response.password2[0] : response.password2);
+        setError(
+          Array.isArray(response.password2)
+            ? response.password2[0]
+            : response.password2
+        );
       } else if (response.detail) {
         setError(response.detail);
       } else if (response.access) {
@@ -74,7 +88,18 @@ export default function RegisterPage() {
 
   return (
     <div className="flex-1 flex h-full justify-center items-center">
-      <form onSubmit={handleSubmit} className="border-2 border-gray-300 rounded-lg p-8 w-96">
+      <img
+        src="splash.png"
+        className="absolute -z-10 scale-115 rotate-180 translate-x-65"
+      />
+      <img
+        src="splash.png"
+        className="absolute rotate-90 opacity-70 h-auto w-120 -z-10 -translate-x-70 -translate-y-30"
+      />
+      <form
+        onSubmit={handleSubmit}
+        className="border-2 border-gray-300 rounded-lg p-8 w-96"
+      >
         <h1 className="text-2xl mb-6">Register</h1>
 
         {error && (
@@ -89,7 +114,7 @@ export default function RegisterPage() {
           type="text"
           value={formData.username}
           onChange={handleChange}
-          className="border-2 w-full rounded-lg border-gray-300 px-3 py-1 mb-3"
+          className="border-2 w-full bg-white rounded-lg border-gray-300 px-3 py-1 mb-3"
           required
         />
 
@@ -99,7 +124,7 @@ export default function RegisterPage() {
           type="email"
           value={formData.email}
           onChange={handleChange}
-          className="border-2 w-full rounded-lg border-gray-300 px-3 py-1 mb-3"
+          className="border-2 w-full bg-white rounded-lg border-gray-300 px-3 py-1 mb-3"
           required
         />
 
@@ -109,7 +134,7 @@ export default function RegisterPage() {
           type="password"
           value={formData.password}
           onChange={handleChange}
-          className="border-2 w-full rounded-lg border-gray-300 px-3 py-1 mb-3"
+          className="border-2 w-full bg-white rounded-lg border-gray-300 px-3 py-1 mb-3"
           required
         />
 
@@ -119,7 +144,7 @@ export default function RegisterPage() {
           type="password"
           value={formData.password2}
           onChange={handleChange}
-          className="border-2 w-full rounded-lg border-gray-300 px-3 py-1 mb-3"
+          className="border-2 w-full bg-white rounded-lg border-gray-300 px-3 py-1 mb-3"
           required
         />
 
@@ -128,7 +153,7 @@ export default function RegisterPage() {
           name="role"
           value={formData.role}
           onChange={handleChange as any}
-          className="border-2 w-full rounded-lg border-gray-300 px-3 py-1 mb-4"
+          className="border-2 w-full bg-white rounded-lg border-gray-300 px-3 py-1 mb-4"
           required
         >
           <option value="LISTENER">Listener</option>
