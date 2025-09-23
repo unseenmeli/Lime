@@ -73,15 +73,29 @@ class OwnerMiniSerializer(serializers.ModelSerializer):
 class SongSerializer(serializers.ModelSerializer):
     owner = OwnerMiniSerializer(read_only=True)
 
+    likes_count = serializers.SerializerMethodField()
+    liked_by_me = serializers.SerializerMethodField()
+
     class Meta:
         model = Song
         fields = (
             "id", "owner", "title", "description",
             "audio", "cover", "is_public",
             "duration_seconds", "plays",
+            "likes_count", "liked_by_me",
             "created_at",
         )
-        read_only_fields = ("duration_seconds", "plays", "created_at", "owner")
+        read_only_fields = ("duration_seconds", "plays", "created_at", "owner", "likes_count", "liked_by_me")
+
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+    
+    def get_liked_by_me(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.likes.filter(pk=request.user.pk).exists()
 
     def validate_audio(self, f):
         # very light checks (keep simple)

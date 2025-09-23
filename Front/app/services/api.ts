@@ -264,6 +264,34 @@ export const songService = {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
+
+  async updateSong(
+    id: number,
+    payload: Partial<{title: string; description: string; is_public: boolean}>
+  ) {
+    const res = await fetchWithAuth(`/songs/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+  async deleteSong(id: number) {
+    const res = await fetchWithAuth(`/songs/${id}/`, {method: "DELETE"});
+    if (!res.ok) throw new Error(await res.text());
+  },
+
+  async likeSong(id: number): Promise<{ likes_count: number; liked_by_me: boolean }> {
+    const res = await fetchWithAuth(`/songs/${id}/like/`, { method: "POST" });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  async unlikeSong(id: number): Promise<{ likes_count: number; liked_by_me: boolean }> {
+    const res = await fetchWithAuth(`/songs/${id}/unlike/`, {method: "POST"});
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
 };
 
 
