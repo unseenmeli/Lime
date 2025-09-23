@@ -119,7 +119,6 @@ export default function AudioPlayer() {
   const gainNodeRef = useRef<GainNode | null>(null);
   const filtersRef = useRef<BiquadFilterNode[]>([]);
   const dragStartRef = useRef({ x: 0, y: 0 });
-  const currentTrack = tracks[currentTrackIndex];
 
   useEffect(() => {
     const bars = 65;
