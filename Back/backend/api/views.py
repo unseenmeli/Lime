@@ -1,6 +1,6 @@
 from rest_framework import permissions, status, viewsets, mixins, decorators, response
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
@@ -123,7 +123,7 @@ class SongViewSet(viewsets.ModelViewSet):
     """
     serializer_class = SongSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-    parser_classes = (MultiPartParser, FormParser)   
+    parser_classes = (JSONParser, MultiPartParser, FormParser)
 
     def get_queryset(self):
         user = self.request.user
@@ -142,11 +142,21 @@ class SongViewSet(viewsets.ModelViewSet):
     @decorators.action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk=None):
         song = self.get_object()
+        if song.owner_id == request.user.id:
+            return Response({"detail": "You cannot like your own song."}, status=status.HTTP_400_BAD_REQUEST)
         song.likes.add(request.user)
-        return response.Response({"likes": song.likes.count()}, status=status.HTTP_200_OK)
+        data = {
+            "likes_count": song.likes.count(),
+            "liked_by_me": True,
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
     @decorators.action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def unlike(self, request, pk=None):
         song = self.get_object()
         song.likes.remove(request.user)
-        return response.Response({"likes": song.likes.count()}, status=status.HTTP_200_OK)
+        data = {
+            "likes_count": song.likes.count(),
+            "liked_by_me": False,
+        }
+        return Response(data, status=status.HTTP_200_OK)
