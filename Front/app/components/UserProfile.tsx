@@ -361,25 +361,26 @@ export default function UserProfile() {
               )}
 
               {/* fake waveform + song title overlay (same style as mock) */}
-              <div className="flex items-center gap-[2px] flex-1 h-12 relative">
-                {[...Array(30)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 bg-gray-400"
-                    style={{ height: `${Math.random() * 70 + 30}%` }}
-                  />
-                ))}
-                <p
-                  className="absolute inset-0 flex items-center justify-center text-green-200 font text-lg pointer-events-none"
-                  style={{
-                    textShadow:
-                      "2px 2px 0 black, -2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 0 2px 0 black, 0 -2px 0 black, 2px 0 0 black, -2px 0 0 black",
-                  }}
-                >
-                  {song.title}
-                </p>
-                {isSelf && (
-                  <div className="relative">
+              <div className="flex flex-col gap-2 flex-1">
+                <div className="flex items-center gap-[2px] h-12 relative">
+                  {[...Array(30)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 bg-gray-400"
+                      style={{ height: `${Math.random() * 70 + 30}%` }}
+                    />
+                  ))}
+                  <p
+                    className="absolute inset-0 flex items-center justify-center text-green-200 font text-lg pointer-events-none"
+                    style={{
+                      textShadow:
+                        "2px 2px 0 black, -2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 0 2px 0 black, 0 -2px 0 black, 2px 0 0 black, -2px 0 0 black",
+                    }}
+                  >
+                    {song.title}
+                  </p>
+                  {isSelf && (
+                    <div className="relative">
                     <button
                       ref={(el) => {
                         if (el) buttonRefs.current.set(song.id, el);
@@ -429,7 +430,59 @@ export default function UserProfile() {
                     )}
                   </div>
                 )}
-                {editId === song.id && (
+                </div>
+
+                {/* Play and Like buttons below waveform */}
+                <div className="flex items-center gap-2">
+                  <button
+                    className="text-2xl hover:opacity-70"
+                    onClick={() => play(song)}
+                    aria-label={nowPlayingId === song.id ? "pause" : "play"}
+                  >
+                    {nowPlayingId === song.id ? "❚❚" : "▶"}
+                  </button>
+
+                  {/* Like button */}
+                  {(() => {
+                    const isOwnSong =
+                      !!currentUser &&
+                      currentUser.username === (song.owner?.username ?? "");
+                    const isLiked = !!song.liked_by_me;
+
+                    return (
+                      <button
+                        onClick={() => toggleLike(song)}
+                        disabled={likeBusyId === song.id || isOwnSong}
+                        className={`relative flex items-center gap-1 px-2 py-1 rounded transition-opacity
+          ${isOwnSong ? "cursor-not-allowed" : "hover:opacity-80"}`}
+                        title={
+                          isOwnSong
+                            ? "You can't like your own song"
+                            : isLiked
+                            ? "Unlike"
+                            : "Like"
+                        }
+                        aria-label={isLiked ? "Unlike" : "Like"}
+                      >
+                        <img
+                          src={isLiked ? "/liked.png" : "/unliked.png"}
+                          alt={isLiked ? "Unlike" : "Like"}
+                          className="w-6 h-6"
+                        />
+                        <span
+                          className={`text-sm ${
+                            isOwnSong ? "text-gray-600" : "text-gray-700"
+                          }`}
+                        >
+                          {song.likes_count}
+                        </span>
+                      </button>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {editId === song.id && (
                   <div className="px-10 py-3 flex flex-col gap-2">
                     <input
                       className="border rounded px-2 py-1"
@@ -457,135 +510,9 @@ export default function UserProfile() {
                       >
                         Cancel
                       </button>
-                      {/* play button */}
-                      <div className="flex">
-                        <button
-                          className="text-2xl hover:opacity-70"
-                          onClick={() => play(song)}
-                          aria-label={
-                            nowPlayingId === song.id ? "pause" : "play"
-                          }
-                        >
-                          {nowPlayingId === song.id ? "❚❚" : "▶"}
-                        </button>
-
-                        {/* Like button */}
-                        {(() => {
-                          const isOwnSong =
-                            !!currentUser &&
-                            currentUser.username ===
-                              (song.owner?.username ?? "");
-                          const isLiked = !!song.liked_by_me;
-
-                          return (
-                            <button
-                              onClick={() => toggleLike(song)}
-                              disabled={likeBusyId === song.id || isOwnSong} // still unclickable on own song
-                              className={`relative z-10 flex items-center gap-1 px-2 py-1 rounded transition-opacity
-        ${isOwnSong ? "cursor-not-allowed" : "hover:opacity-80"}`}
-                              title={
-                                isOwnSong
-                                  ? "You can't like your own song"
-                                  : isLiked
-                                  ? "Unlike"
-                                  : "Like"
-                              }
-                              aria-label={isLiked ? "Unlike" : "Like"}
-                            >
-                              {/* Heart icon:*/}
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                className="w-8 h-8"
-                              >
-                                <path
-                                  d="M12 21s-6.146-3.662-9-7.2C1.2 12.08 1 10.4 2.1 9.1A4.2 4.2 0 0 1 8 9.2l.6.6.6-.6a4.2 4.2 0 0 1 5.9 0c1.1 1.3.9 2.98-.9 4.7-2.854 3.538-9 7.2-9 7.2Z"
-                                  fill={
-                                    isOwnSong
-                                      ? "none"
-                                      : isLiked
-                                      ? "#C3D772"
-                                      : "none" // fill on liked only
-                                  }
-                                  stroke={isOwnSong ? "#9CA3AF" : "#C3D772"} // gray when own; lime otherwise
-                                  strokeWidth={2}
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                              <span
-                                className={`text-sm ${
-                                  isOwnSong ? "text-gray-600" : "text-gray-700"
-                                }`}
-                              >
-                                {song.likes_count}
-                              </span>
-                            </button>
-                          );
-                        })()}
-                      </div>
                     </div>
                   </div>
                 )}
-                {/* play button */}
-                <button
-                  className="text-2xl hover:opacity-70"
-                  onClick={() => play(song)}
-                  aria-label={nowPlayingId === song.id ? "pause" : "play"}
-                >
-                  {nowPlayingId === song.id ? "❚❚" : "▶"}
-                </button>
-
-                {/* Like button */}
-                {(() => {
-                  const isOwnSong =
-                    !!currentUser &&
-                    currentUser.username === (song.owner?.username ?? "");
-                  const isLiked = !!song.liked_by_me;
-
-                  return (
-                    <button
-                      onClick={() => toggleLike(song)}
-                      disabled={likeBusyId === song.id || isOwnSong} // still unclickable on own song
-                      className={`relative z-10 flex items-center gap-1 px-2 py-1 rounded transition-opacity
-        ${isOwnSong ? "cursor-not-allowed" : "hover:opacity-80"}`}
-                      title={
-                        isOwnSong
-                          ? "You can't like your own song"
-                          : isLiked
-                          ? "Unlike"
-                          : "Like"
-                      }
-                      aria-label={isLiked ? "Unlike" : "Like"}
-                    >
-                      {/* Heart icon:*/}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        className="w-8 h-8"
-                      >
-                        <path
-                          d="M12 21s-6.146-3.662-9-7.2C1.2 12.08 1 10.4 2.1 9.1A4.2 4.2 0 0 1 8 9.2l.6.6.6-.6a4.2 4.2 0 0 1 5.9 0c1.1 1.3.9 2.98-.9 4.7-2.854 3.538-9 7.2-9 7.2Z"
-                          fill={
-                            isOwnSong ? "none" : isLiked ? "#C3D772" : "none" // fill on liked only
-                          }
-                          stroke={isOwnSong ? "#9CA3AF" : "#C3D772"} // gray when own; lime otherwise
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      <span
-                        className={`text-sm ${
-                          isOwnSong ? "text-gray-600" : "text-gray-700"
-                        }`}
-                      >
-                        {song.likes_count}
-                      </span>
-                    </button>
-                  );
-                })()}
-              </div>
             </div>
           ))}
         </div>

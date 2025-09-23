@@ -30,11 +30,23 @@ export default function RootLayout({
   const [loginModal, setLoginModal] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       const authenticated = authService.isAuthenticated();
       setIsAuthenticated(authenticated);
       if (authenticated) {
-        setUser(authService.getUser());
+        const storedUser = authService.getUser();
+        if (storedUser?.username) {
+          try {
+            const { userService } = await import("./services/api");
+            const fullUserData = await userService.getUser(storedUser.username);
+            setUser(fullUserData);
+          } catch (error) {
+            console.error("Failed to fetch user profile:", error);
+            setUser(storedUser);
+          }
+        } else {
+          setUser(storedUser);
+        }
       }
     };
 
@@ -62,6 +74,9 @@ export default function RootLayout({
     setUser(null);
     router.push("/");
   };
+
+  console.log('User object:', user);
+  console.log('Profile picture URL:', user?.profile_picture);
 
   return (
     <html lang="en">
@@ -112,7 +127,7 @@ export default function RootLayout({
                       onMouseLeave={() => handleHover(null)}
                       onClick={handleSignOut}
                     >
-                      <h1 className="text-xl py-3 whitespace-nowrap">
+                      <h1 className="text-xl px-5 py-3 whitespace-nowrap">
                         sign out
                       </h1>
                       <div
@@ -125,7 +140,7 @@ export default function RootLayout({
                     </div>
 
                     <div
-                      className="flex justify-center items-end cursor-pointer"
+                      className="flex justify-center items-end cursor-pointer relative"
                       onMouseEnter={() => {
                         handleHover("profile");
                         setProfileHover(true);
@@ -137,33 +152,35 @@ export default function RootLayout({
                       }}
                     >
                       <h1
-                        className="text-xl px-10 py-3"
-                        onClick={() => navigateTo("profile")}
+                        className="text-xl px-5 py-3"
+                        onClick={() => navigateTo(`./u/${user?.username}`)}
                       >
                         profile
                       </h1>
                       {profileHover && (
-                        <div className="absolute translate-y-62 w-30 h-60 bg-white border-2 border-gray-300 flex flex-col">
+                        <div className="absolute top-full w-30 h-60 bg-white border-2 border-gray-300 flex flex-col">
                           <div className="pt-5 flex-1 flex flex-col items-center border-b-1 pb-1 border-gray-300">
                             <img
-                              className="w-20 rounded-full"
-                              src="muse.jpeg"
+                              className="w-20 h-20 rounded-full object-cover"
+                              src={user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`) : "/pfp.png"}
                             />
-                            <p>unseenmeli</p>
+                            <p>{user?.username}</p>
                           </div>
                           <div className="flex-1 flex flex-col pt-2">
                             <div
                               className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200"
-                              onClick={() => navigateTo("profile")}
+                              onClick={() =>
+                                navigateTo(`./u/${user?.username}`)
+                              }
                             >
-                              <img className="w-4 h-4" src="user.png" />
+                              <img className="w-4 h-4" src="/user.png" />
                               <p>profile</p>
                             </div>
                             <div
                               className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200"
                               onClick={() => setThemeSetting(true)}
                             >
-                              <img className="w-4 h-4" src="sleep-mode.png" />
+                              <img className="w-4 h-4" src="/sleep-mode.png" />
                               <p>theme</p>
                             </div>
                             {themeSetting && (
@@ -177,7 +194,7 @@ export default function RootLayout({
                               </div>
                             )}
                             <div className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200">
-                              <img className="w-4 h-4" src="setting.png" />
+                              <img className="w-4 h-4" src="/setting.png" />
                               <p>settings</p>
                             </div>
                           </div>
@@ -197,7 +214,7 @@ export default function RootLayout({
                       onMouseLeave={() => handleHover(null)}
                       onClick={() => navigateTo("post")}
                     >
-                      <h1 className="text-xl px-10 py-3">post</h1>
+                      <h1 className="text-xl px-5 py-3">post</h1>
                       <div
                         className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
                           hoveredElement === "post"
