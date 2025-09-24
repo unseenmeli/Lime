@@ -34,16 +34,20 @@ export const authService = {
   setTokens(access: string, refresh: string) {
     localStorage.setItem("accessToken", access);
     localStorage.setItem("refreshToken", refresh);
+    window.dispatchEvent(new Event("auth:changed"));
   },
   clearTokens() {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    window.dispatchEvent(new Event("auth:changed"));
   },
   setUser(user: any) {
     localStorage.setItem("user", JSON.stringify(user));
+    window.dispatchEvent(new Event("auth:changed"));
   },
   clearUser() {
     localStorage.removeItem("user");
+    window.dispatchEvent(new Event("auth:changed"));
   },
 
   getAccessToken() {

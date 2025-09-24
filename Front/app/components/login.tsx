@@ -31,7 +31,7 @@ export default function Login() {
       } else if (response.detail) {
         setError(response.detail);
       } else if (response.access) {
-        router.push("/");
+        window.location.href = "/";
       } else {
         setError("Invalid username or password");
       }
