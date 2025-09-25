@@ -50,6 +50,7 @@ class UserAdmin(DjangoUserAdmin):
         self.message_user(request, f"Recalculated follower_count for {count} user(s).")
     recalculate_follower_counts.short_description = "Recalculate follower counts for selected users"
 
+
 @admin.register(Song)
 class SongAdmin(admin.ModelAdmin):
     list_display = ("title", "owner", "is_public", "plays", "created_at")

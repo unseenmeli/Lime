@@ -75,8 +75,8 @@ export default function RootLayout({
     router.push("/");
   };
 
-  console.log('User object:', user);
-  console.log('Profile picture URL:', user?.profile_picture);
+  console.log("User object:", user);
+  console.log("Profile picture URL:", user?.profile_picture);
 
   return (
     <html lang="en">
@@ -158,11 +158,20 @@ export default function RootLayout({
                         profile
                       </h1>
                       {profileHover && (
-                        <div className="absolute top-full w-30 h-60 bg-white border-2 border-gray-300 flex flex-col">
-                          <div className="pt-5 flex-1 flex flex-col items-center border-b-1 pb-1 border-gray-300">
+                        <div className="absolute top-full w-30 h-70 bg-white border-2 border-gray-300 flex flex-col">
+                          <div
+                            onClick={() => navigateTo(`./u/${user?.username}`)}
+                            className="pt-5 flex-1 flex flex-col items-center border-b-1 pb-1 border-gray-300"
+                          >
                             <img
                               className="w-20 h-20 rounded-full object-cover"
-                              src={user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : `http://127.0.0.1:8000${user.profile_picture}`) : "/pfp.png"}
+                              src={
+                                user?.profile_picture
+                                  ? user.profile_picture.startsWith("http")
+                                    ? user.profile_picture
+                                    : `/${user.profile_picture}`
+                                  : "/pfp.png"
+                              }
                             />
                             <p>{user?.username}</p>
                           </div>
@@ -172,10 +181,21 @@ export default function RootLayout({
                               onClick={() =>
                                 navigateTo(`./u/${user?.username}`)
                               }
+                              role="button"
+                              tabIndex={0}
                             >
                               <img className="w-4 h-4" src="/user.png" />
                               <p>profile</p>
                             </div>
+                            {user?.role !== "ARTIST" && (
+                              <div
+                                className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200"
+                                onClick={() => navigateTo("post")}
+                              >
+                                <img className="w-4 h-4" src="/setting.png" />
+                                <p>post</p>
+                              </div>
+                            )}
                             <div
                               className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200"
                               onClick={() => setThemeSetting(true)}
@@ -208,21 +228,23 @@ export default function RootLayout({
                         }`}
                       ></div>
                     </div>
-                    <div
-                      className="flex justify-center items-end cursor-pointer"
-                      onMouseEnter={() => handleHover("post")}
-                      onMouseLeave={() => handleHover(null)}
-                      onClick={() => navigateTo("post")}
-                    >
-                      <h1 className="text-xl px-5 py-3">post</h1>
+                    {user?.role === "ARTIST" && (
                       <div
-                        className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
-                          hoveredElement === "post"
-                            ? "opacity-100"
-                            : "opacity-0"
-                        }`}
-                      ></div>
-                    </div>
+                        className="flex justify-center items-end cursor-pointer"
+                        onMouseEnter={() => handleHover("post")}
+                        onMouseLeave={() => handleHover(null)}
+                        onClick={() => navigateTo("post")}
+                      >
+                        <h1 className="text-xl px-5 py-3">post</h1>
+                        <div
+                          className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
+                            hoveredElement === "post"
+                              ? "opacity-100"
+                              : "opacity-0"
+                          }`}
+                        ></div>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>

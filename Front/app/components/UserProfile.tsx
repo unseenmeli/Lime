@@ -38,9 +38,28 @@ export default function UserProfile() {
   const [editDesc, setEditDesc] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [likeBusyId, setLikeBusyId] = useState<number | null>(null);
+  const [descOpenId, setDescOpenId] = useState<number | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [nowPlayingId, setNowPlayingId] = useState<number | null>(null);
+
+  const [winPos, setWinPos] = useState<{ x: number; y: number }>({
+    x: 900,
+    y: 190,
+  });
+  const dragRef = useRef<{
+    sx: number;
+    sy: number;
+    ox: number;
+    oy: number;
+  } | null>(null);
+  const winRef = useRef<HTMLDivElement | null>(null);
+
+  const openDesc = (id: number) => {
+    setMenuOpenId(null);
+    setDescOpenId(id);
+  };
+  const closeDesc = () => setDescOpenId(null);
 
   const currentUser =
     typeof window !== "undefined"
@@ -274,6 +293,30 @@ export default function UserProfile() {
   if (err) return <div className="p-6 text-red-600">{err}</div>;
   if (!user) return <div className="p-6">User not found</div>;
 
+  function onBarDown(e: React.PointerEvent) {
+    if (e.button !== 0) return;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = {
+      sx: e.clientX,
+      sy: e.clientY,
+      ox: winPos.x,
+      oy: winPos.y,
+    };
+  }
+  function onBarMove(e: React.PointerEvent) {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.sx;
+    const dy = e.clientY - dragRef.current.sy;
+    setWinPos({
+      x: Math.max(0, dragRef.current.ox + dx),
+      y: Math.max(0, dragRef.current.oy + dy),
+    });
+  }
+  function onBarUp(e: React.PointerEvent) {
+    dragRef.current = null;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+  }
+
   return (
     <div className="flex flex-col w-full h-full overflow-hidden relative">
       {/* background */}
@@ -317,7 +360,6 @@ export default function UserProfile() {
               {" - "}
               {user.follower_count.toLocaleString()}
             </p>
-
             {user.profile_picture ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -336,153 +378,183 @@ export default function UserProfile() {
         </div>
 
         {/* right: tracks list */}
-        <div className="flex-1">
-          <p className="font text-3xl px-10 py-5">tracks</p>
+        {/* right: tracks list in a draggable window */}
+        <div
+          ref={winRef}
+          className="fixed z-50 w-[760px] rounded-xl shadow-[0_10px_25px_rgba(0,0,0,0.25)] border border-gray-300 overflow-hidden backdrop-blur-sm"
+          style={{ left: winPos.x, top: winPos.y }}
+        >
+          {/* Title bar (drag handle) */}
+          <div
+            className="cursor-move select-none h-10 px-4 flex items-center justify-between 
+           bg-white/20 border-b border-white/60"
+            onPointerDown={onBarDown}
+            onPointerMove={onBarMove}
+            onPointerUp={onBarUp}
+          >
+            <span className="font text-lg">tracks</span>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-green-400" />
+              <span className="w-3 h-3 rounded-full bg-orange-500" />
+              <span className="w-3 h-3 rounded-full bg-red-600" />
+            </div>
+          </div>
 
-          {songs.length === 0 && (
-            <div className="px-10 py-2 text-gray-600">No tracks yet.</div>
-          )}
-
-          {songs.map((song) => (
-            <div key={song.id} className="px-10 flex items-center gap-4 py-2">
-              {/* cover */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {song.cover ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  className="w-30 h-30 shadow-[0_0_10px_rgba(0,0,0,0.5)] object-cover"
-                  src={song.cover}
-                  alt={`${song.title} cover`}
-                />
-              ) : (
-                <div className="w-30 h-30 shadow-[0_0_10px_rgba(0,0,0,0.5)] bg-gray-300 flex items-center justify-center">
-                  <span className="text-lg text-white font">♪</span>
-                </div>
-              )}
-
-              {/* fake waveform + song title overlay (same style as mock) */}
-              <div className="flex flex-col gap-2 flex-1">
-                <div className="flex items-center gap-[2px] h-12 relative">
-                  {[...Array(30)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 bg-gray-400"
-                      style={{ height: `${Math.random() * 70 + 30}%` }}
+          {/* Window body (scrolls if many tracks) */}
+          <div className="bg-white/90 max-h-[70vh] overflow-auto">
+            {songs.length === 0 && (
+              <div className="px-10 py-2 text-gray-600">No tracks yet.</div>
+            )}
+            {songs.map((song) => (
+              <div key={song.id} className="px-10 flex items-center gap-4 py-3">
+                {/* cover */}
+                <button
+                  type="button"
+                  onClick={() => openDesc(song.id)}
+                  className="w-30 h-30 shadow-[0_0_10px_rgba(0,0,0,0.5)] focus:outline-none focus:ring-2 focus:ring-white/60 rounded overflow-hidden"
+                  aria-label={`View description for ${song.title} by ${song.owner}`}
+                >
+                  {song.cover ? (
+                    <img
+                      className="w-30 h-30 shadow-[0_0_10px_rgba(0,0,0,0.5)] object-cover"
+                      src={song.cover}
+                      alt={`${song.title} cover`}
                     />
-                  ))}
-                  <p
-                    className="absolute inset-0 flex items-center justify-center text-green-200 font text-lg pointer-events-none"
-                    style={{
-                      textShadow:
-                        "2px 2px 0 black, -2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 0 2px 0 black, 0 -2px 0 black, 2px 0 0 black, -2px 0 0 black",
-                    }}
-                  >
-                    {song.title}
-                  </p>
-                  {isSelf && (
-                    <div className="relative">
-                    <button
-                      ref={(el) => {
-                        if (el) buttonRefs.current.set(song.id, el);
-                        else buttonRefs.current.delete(song.id);
-                      }}
-                      className="text-xl px-2 hover:opacity-70"
-                      onClick={() =>
-                        setMenuOpenId(menuOpenId === song.id ? null : song.id)
-                      }
-                      aria-label="More"
-                      title="More"
-                    >
-                      ⋯
-                    </button>
+                  ) : (
+                    <div className="w-30 h-30 shadow-[0_0_10px_rgba(0,0,0,0.5)] bg-gray-300 flex items-center justify-center">
+                      <span className="text-lg text-white font">♪</span>
+                    </div>
+                  )}
+                </button>
 
-                    {menuOpenId === song.id && (
+                {/* waveform + title + menu (unchanged logic, slight positioning tweak only) */}
+                <div className="flex flex-col gap-2 flex-1">
+                  <div className="flex items-center gap-[2px] h-12 relative">
+                    {[...Array(30)].map((_, i) => (
                       <div
-                        ref={(el) => {
-                          if (el) menuRefs.current.set(song.id, el);
-                          else menuRefs.current.delete(song.id);
-                        }}
-                        className="absolute z-10 mt-2 w-30 bg-white border border-gray-200 rounded shadow"
-                        role="menu"
-                        aria-labelledby={`song-menu-${song.id}`}
-                      >
+                        key={i}
+                        className="flex-1 bg-gray-400"
+                        style={{ height: `${Math.random() * 70 + 30}%` }}
+                      />
+                    ))}
+                    <p
+                      className="absolute inset-0 flex items-center justify-center text-green-200 font text-lg pointer-events-none"
+                      style={{
+                        textShadow:
+                          "2px 2px 0 black, -2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 1px 1px 0 black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 0 2px 0 black, 0 -2px 0 black, 2px 0 0 black, -2px 0 0 black",
+                      }}
+                    >
+                      {song.title}
+                    </p>
+
+                    {isSelf && (
+                      <div className="absolute right-0 -top-7 z-30">
                         <button
-                          className="block w-full text-left px-3 py-1 hover:bg-gray-100"
-                          disabled={busyId === song.id}
-                          onClick={() => toggleVisibility(song)}
+                          ref={(el) => {
+                            if (el) buttonRefs.current.set(song.id, el);
+                            else buttonRefs.current.delete(song.id);
+                          }}
+                          className="text-xl px-2 hover:opacity-70"
+                          onClick={() =>
+                            setMenuOpenId(
+                              menuOpenId === song.id ? null : song.id
+                            )
+                          }
+                          aria-label="More"
+                          title="More"
                         >
-                          {song.is_public ? "Make private" : "Make public"}
+                          ⋯
                         </button>
-                        <button
-                          className="block w-full text-left px-3 py-1 hover:bg-gray-100"
-                          onClick={() => startEdit(song)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="block w-full text-left px-3 py-1 text-red-600 hover:bg-red-50"
-                          disabled={busyId === song.id}
-                          onClick={() => deleteSong(song)}
-                        >
-                          Delete
-                        </button>
+
+                        {menuOpenId === song.id && (
+                          <div
+                            ref={(el) => {
+                              if (el) menuRefs.current.set(song.id, el);
+                              else menuRefs.current.delete(song.id);
+                            }}
+                            className="absolute top-full right-1 mt-2 w-32 bg-white border border-gray-200 rounded shadow z-40"
+                            role="menu"
+                            aria-labelledby={`song-menu-${song.id}`}
+                          >
+                            <button
+                              className="block w-full text-left px-3 py-1 hover:bg-gray-100"
+                              disabled={busyId === song.id}
+                              onClick={() => toggleVisibility(song)}
+                            >
+                              {song.is_public ? "Make private" : "Make public"}
+                            </button>
+                            <button
+                              className="block w-full text-left px-3 py-1 hover:bg-gray-100"
+                              onClick={() => startEdit(song)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="block w-full text-left px-3 py-1 text-red-600 hover:bg-red-50"
+                              disabled={busyId === song.id}
+                              onClick={() => deleteSong(song)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
-                </div>
 
-                {/* Play and Like buttons below waveform */}
-                <div className="flex items-center gap-2">
-                  <button
-                    className="text-2xl hover:opacity-70"
-                    onClick={() => play(song)}
-                    aria-label={nowPlayingId === song.id ? "pause" : "play"}
-                  >
-                    {nowPlayingId === song.id ? "❚❚" : "▶"}
-                  </button>
+                  {/* Play / Like (unchanged) */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="text-2xl hover:opacity-70"
+                      onClick={() => play(song)}
+                      aria-label={nowPlayingId === song.id ? "pause" : "play"}
+                    >
+                      {nowPlayingId === song.id ? "❚❚" : "▶"}
+                    </button>
 
-                  {/* Like button */}
-                  {(() => {
-                    const isOwnSong =
-                      !!currentUser &&
-                      currentUser.username === (song.owner?.username ?? "");
-                    const isLiked = !!song.liked_by_me;
+                    {(() => {
+                      const isOwnSong =
+                        !!currentUser &&
+                        currentUser.username === (song.owner?.username ?? "");
+                      const isLiked = !!song.liked_by_me;
 
-                    return (
-                      <button
-                        onClick={() => toggleLike(song)}
-                        disabled={likeBusyId === song.id || isOwnSong}
-                        className={`relative flex items-center gap-1 px-2 py-1 rounded transition-opacity
-          ${isOwnSong ? "cursor-not-allowed" : "hover:opacity-80"}`}
-                        title={
-                          isOwnSong
-                            ? "You can't like your own song"
-                            : isLiked
-                            ? "Unlike"
-                            : "Like"
-                        }
-                        aria-label={isLiked ? "Unlike" : "Like"}
-                      >
-                        <img
-                          src={isLiked ? "/liked.png" : "/unliked.png"}
-                          alt={isLiked ? "Unlike" : "Like"}
-                          className="w-6 h-6"
-                        />
-                        <span
-                          className={`text-sm ${
-                            isOwnSong ? "text-gray-600" : "text-gray-700"
+                      return (
+                        <button
+                          onClick={() => toggleLike(song)}
+                          disabled={likeBusyId === song.id || isOwnSong}
+                          className={`relative flex items-center gap-1 px-2 py-1 rounded transition-opacity ${
+                            isOwnSong
+                              ? "cursor-not-allowed"
+                              : "hover:opacity-80"
                           }`}
+                          title={
+                            isOwnSong
+                              ? "You can't like your own song"
+                              : isLiked
+                              ? "Unlike"
+                              : "Like"
+                          }
+                          aria-label={isLiked ? "Unlike" : "Like"}
                         >
-                          {song.likes_count}
-                        </span>
-                      </button>
-                    );
-                  })()}
+                          <img
+                            src={isLiked ? "/liked.png" : "/unliked.png"}
+                            alt={isLiked ? "Unlike" : "Like"}
+                            className="w-6 h-6"
+                          />
+                          <span
+                            className={`text-sm ${
+                              isOwnSong ? "text-gray-600" : "text-gray-700"
+                            }`}
+                          >
+                            {song.likes_count}
+                          </span>
+                        </button>
+                      );
+                    })()}
+                  </div>
                 </div>
-              </div>
 
-              {editId === song.id && (
+                {editId === song.id && (
                   <div className="px-10 py-3 flex flex-col gap-2">
                     <input
                       className="border rounded px-2 py-1"
@@ -513,10 +585,63 @@ export default function UserProfile() {
                     </div>
                   </div>
                 )}
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+      {/* === DESCRIPTION MODAL (one instance) === */}
+      {descOpenId !== null &&
+        (() => {
+          const s = songs.find((s) => s.id === descOpenId);
+          if (!s) return null;
+
+          return (
+            <div
+              className="fixed inset-0 z-50"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="song-desc-title"
+            >
+              {/* overlay click-catcher */}
+              <button
+                className="fixed inset-0 bg-black/50"
+                aria-label="Close description"
+                onClick={closeDesc}
+              />
+              {/* dialog panel */}
+              <div
+                className="fixed left-1/2 top-1/2 w-[min(90vw,640px)] max-h-[80vh] -translate-x-1/2 -translate-y-1/2
+                          rounded-xl border border-white/20 bg-white p-6 shadow-xl overflow-auto"
+              >
+                <div className="flex items-center gap-1 w-full pl-2">
+                  <h2 id="song-desc-title" className="text-xl mb-5 mr-5">
+                    {s.title}
+                  </h2>
+                  <div className="ml-auto mb-15 flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-green-400" />
+                    <span className="w-3 h-3 rounded-full bg-orange-500" />
+                    <button
+                      type="button"
+                      onClick={closeDesc}
+                      aria-label="Close"
+                      title="Close"
+                      className="inline-block w-3 h-3 rounded-full bg-red-600 p-0 border-0 align-middle"
+                    >
+                      <span className="w-3 h-3 rounded-full bg-red-600" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 whitespace-pre-wrap text-gray-800">
+                  {s.description?.trim()
+                    ? s.description
+                    : "No description provided."}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
     </div>
   );
 }
