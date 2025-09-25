@@ -39,12 +39,13 @@ export default function UserProfile() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [likeBusyId, setLikeBusyId] = useState<number | null>(null);
   const [descOpenId, setDescOpenId] = useState<number | null>(null);
+  const [macWebTools, setMacWebTools] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [nowPlayingId, setNowPlayingId] = useState<number | null>(null);
 
   const [winPos, setWinPos] = useState<{ x: number; y: number }>({
-    x: 900,
+    x: 700,
     y: 190,
   });
   const dragRef = useRef<{
@@ -393,10 +394,38 @@ export default function UserProfile() {
             onPointerUp={onBarUp}
           >
             <span className="font text-lg">tracks</span>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-green-400" />
-              <span className="w-3 h-3 rounded-full bg-orange-500" />
-              <span className="w-3 h-3 rounded-full bg-red-600" />
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onMouseEnter={() => setMacWebTools(true)}
+              onMouseLeave={() => setMacWebTools(false)}
+            >
+              <div className="w-3 h-3 rounded-full bg-green-400 flex items-center justify-center">
+                <p
+                  className={`text-[8px] text-green-800 font-bold opacity-0 transition-opacity duration-200 ${
+                    macWebTools ? "opacity-100" : null
+                  }`}
+                >
+                  +
+                </p>
+              </div>
+              <div className="w-3 h-3 rounded-full bg-yellow-400 flex items-center justify-center">
+                <p
+                  className={`text-[8px] text-yellow-800 font-bold opacity-0 transition-opacity duration-200 ${
+                    macWebTools ? "opacity-100" : null
+                  }`}
+                >
+                  −
+                </p>
+              </div>
+              <div className="w-3 h-3 rounded-full bg-red-400 flex items-center justify-center">
+                <p
+                  className={`text-[8px] text-red-800 font-bold opacity-0 transition-opacity duration-200 ${
+                    macWebTools ? "opacity-100" : null
+                  }`}
+                >
+                  ×
+                </p>
+              </div>
             </div>
           </div>
 
