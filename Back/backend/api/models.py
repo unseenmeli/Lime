@@ -42,6 +42,7 @@ class Song(models.Model):
     duration_seconds = models.PositiveIntegerField(blank=True, null=True)
     plays = models.PositiveIntegerField(default=0)
     likes = models.ManyToManyField(User, blank=True, related_name="liked_songs")
+    waveform_data = models.JSONField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

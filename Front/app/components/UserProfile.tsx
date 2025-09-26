@@ -23,6 +23,7 @@ type SongItem = {
   likes_count: number;
   liked_by_me: boolean;
   owner?: { username: string };
+  waveform_data?: number[] | null;
 };
 
 export default function UserProfile() {
@@ -102,6 +103,7 @@ export default function UserProfile() {
             likes_count: s.likes_count,
             liked_by_me: s.liked_by_me,
             owner: s.owner,
+            waveform_data: s.waveform_data,
           }))
         );
       } catch (e: any) {
@@ -183,6 +185,7 @@ export default function UserProfile() {
       artist: user?.username ?? "Unknown",
       url: s.audio,
       cover: s.cover,
+      waveform_data: s.waveform_data,
     }));
 
     window.dispatchEvent(
@@ -459,13 +462,23 @@ export default function UserProfile() {
                 {/* waveform + title + menu (unchanged logic, slight positioning tweak only) */}
                 <div className="flex flex-col gap-2 flex-1">
                   <div className="flex items-center gap-[2px] h-12 relative">
-                    {[...Array(30)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 bg-gray-400"
-                        style={{ height: `${Math.random() * 70 + 30}%` }}
-                      />
-                    ))}
+                    {song.waveform_data && song.waveform_data.length > 0 ? (
+                      song.waveform_data.slice(0, 30).map((value, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 bg-gray-400"
+                          style={{ height: `${value * 100}%` }}
+                        />
+                      ))
+                    ) : (
+                      [...Array(30)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 bg-gray-400"
+                          style={{ height: "50%" }}
+                        />
+                      ))
+                    )}
                     <p
                       className="absolute inset-0 flex items-center justify-center text-green-200 font text-lg pointer-events-none"
                       style={{

@@ -10,6 +10,10 @@ from django.shortcuts import get_object_or_404
 from .models import Song
 from .permissions import IsOwnerOrReadOnly
 from django.db.models import Q
+from django.http import Http404
+from django.conf import settings
+import os
+from .utils import serve_audio_with_range
 
 User = get_user_model()
 
@@ -160,3 +164,12 @@ class SongViewSet(viewsets.ModelViewSet):
             "liked_by_me": False,
         }
         return Response(data, status=status.HTTP_200_OK)
+
+
+def serve_audio(request, owner_id, filename):
+    file_path = os.path.join(settings.MEDIA_ROOT, 'audio', str(owner_id), filename)
+
+    if not os.path.exists(file_path):
+        raise Http404("Audio file not found")
+
+    return serve_audio_with_range(request, file_path)

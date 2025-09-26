@@ -9,6 +9,7 @@ type Track = {
   artist: string;
   url: string;
   cover: string | null;
+  waveform_data?: number[] | null;
 };
 
 export default function AudioPlayer() {
@@ -57,6 +58,7 @@ export default function AudioPlayer() {
           artist: s.owner?.username ?? "Unknown",
           url: s.audio,
           cover: s.cover,
+          waveform_data: s.waveform_data,
         }));
         setTracks(mapped);
         setCurrentTrackIndex(0);
@@ -79,6 +81,7 @@ export default function AudioPlayer() {
           artist: string;
           url: string;
           cover?: string | null;
+          waveform_data?: number[] | null;
         }[];
         startId?: number;
       }>;
@@ -94,6 +97,7 @@ export default function AudioPlayer() {
       const normalized: Track[] = newQueue.map((t) => ({
         ...t,
         cover: t.cover ?? null,
+        waveform_data: t.waveform_data ?? null,
       }));
       setTracks(normalized);
 
@@ -107,11 +111,9 @@ export default function AudioPlayer() {
     }
 
     window.addEventListener("player:play", onExternalPlay as EventListener);
-    return () =>
-      window.removeEventListener(
-        "player:play",
-        onExternalPlay as EventListener
-      );
+    return () => {
+      window.removeEventListener("player:play", onExternalPlay as EventListener);
+    };
   }, []);
   const eqPanelRef = useRef<HTMLDivElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -121,13 +123,13 @@ export default function AudioPlayer() {
   const dragStartRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    const bars = 65;
-    const data: number[] = [];
-    for (let i = 0; i < bars; i++) {
-      data.push(Math.random() * 0.7 + 0.3);
+    const currentTrack = tracks[currentTrackIndex];
+    if (currentTrack?.waveform_data && currentTrack.waveform_data.length > 0) {
+      setWaveformData(currentTrack.waveform_data);
+    } else {
+      setWaveformData(Array(65).fill(0.5));
     }
-    setWaveformData(data);
-  }, [currentTrackIndex]);
+  }, [currentTrackIndex, tracks]);
 
   // Dragging functionality
   useEffect(() => {
@@ -251,17 +253,50 @@ export default function AudioPlayer() {
       }
     };
 
+    const handleSeeked = () => {
+      setCurrentTime(audio.currentTime);
+      if (audio.duration && !isNaN(audio.duration)) {
+        setProgress(audio.currentTime / audio.duration);
+      }
+    };
+
     audio.addEventListener("timeupdate", setAudioData);
     audio.addEventListener("loadedmetadata", setAudioDuration);
     audio.addEventListener("canplay", setAudioDuration);
+    audio.addEventListener("seeked", handleSeeked);
     audio.volume = volume;
 
     return () => {
       audio.removeEventListener("timeupdate", setAudioData);
       audio.removeEventListener("loadedmetadata", setAudioDuration);
       audio.removeEventListener("canplay", setAudioDuration);
+      audio.removeEventListener("seeked", handleSeeked);
     };
-  }, [currentTrackIndex, volume]);
+  }, [volume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentTrack?.url) return;
+
+    if (!audio.src || audio.src !== currentTrack.url) {
+      audio.src = currentTrack.url;
+      audio.load();
+      setCurrentTime(0);
+      setProgress(0);
+      setDuration(0);
+    }
+  }, [currentTrack]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audio.src) return;
+
+    if (isPlaying) {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying]);
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
@@ -276,9 +311,13 @@ export default function AudioPlayer() {
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value);
-    setCurrentTime(newTime);
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
+    const audio = audioRef.current;
+
+    if (audio && audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
+      const clampedTime = Math.max(0, Math.min(newTime, audio.duration));
+      audio.currentTime = clampedTime;
+      setCurrentTime(clampedTime);
+      setProgress(clampedTime / audio.duration);
     }
   };
 
@@ -321,11 +360,7 @@ export default function AudioPlayer() {
 
   return (
     <div className="flex items-center w-full h-full px-4">
-      <audio
-        ref={audioRef}
-        src={currentTrack?.url || undefined}
-        onEnded={nextTrack}
-      />
+      <audio ref={audioRef} onEnded={nextTrack} />
 
       <div className="flex items-center gap-2">
         <button
