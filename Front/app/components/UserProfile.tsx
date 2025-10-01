@@ -8,6 +8,7 @@ type UserDTO = {
   id: number;
   username: string;
   role: string;
+  about: string;
   profile_picture: string | null;
   follower_count: number;
   is_following: boolean;
@@ -46,7 +47,7 @@ export default function UserProfile() {
   const [nowPlayingId, setNowPlayingId] = useState<number | null>(null);
 
   const [winPos, setWinPos] = useState<{ x: number; y: number }>({
-    x: 700,
+    x: 850,
     y: 190,
   });
   const dragRef = useRef<{
@@ -378,6 +379,7 @@ export default function UserProfile() {
                 </span>
               </div>
             )}
+            <p className="font text-xl text-left mt-3">{user.about}</p>
           </div>
         </div>
 
@@ -462,23 +464,23 @@ export default function UserProfile() {
                 {/* waveform + title + menu (unchanged logic, slight positioning tweak only) */}
                 <div className="flex flex-col gap-2 flex-1">
                   <div className="flex items-center gap-[2px] h-12 relative">
-                    {song.waveform_data && song.waveform_data.length > 0 ? (
-                      song.waveform_data.slice(0, 30).map((value, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 bg-gray-400"
-                          style={{ height: `${value * 100}%` }}
-                        />
-                      ))
-                    ) : (
-                      [...Array(30)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 bg-gray-400"
-                          style={{ height: "50%" }}
-                        />
-                      ))
-                    )}
+                    {song.waveform_data && song.waveform_data.length > 0
+                      ? song.waveform_data
+                          .slice(0, 30)
+                          .map((value, i) => (
+                            <div
+                              key={i}
+                              className="flex-1 bg-gray-400"
+                              style={{ height: `${value * 100}%` }}
+                            />
+                          ))
+                      : [...Array(30)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="flex-1 bg-gray-400"
+                            style={{ height: "50%" }}
+                          />
+                        ))}
                     <p
                       className="absolute inset-0 flex items-center justify-center text-green-200 font text-lg pointer-events-none"
                       style={{

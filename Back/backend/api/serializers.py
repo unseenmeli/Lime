@@ -39,7 +39,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "username", "email", "role")
+        fields = ("id", "username", "email", "role", "about")
 
 
 class PublicUserSerializer(serializers.ModelSerializer):
@@ -48,7 +48,7 @@ class PublicUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "username", "role", "profile_picture", "follower_count", "is_following")
+        fields = ("id", "username", "about", "role", "profile_picture", "follower_count", "is_following")
 
     def get_profile_picture(self, obj):
         # return absolute URL or None

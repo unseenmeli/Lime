@@ -21,6 +21,7 @@ interface AuthResponse {
     username: string;
     email: string;
     role?: string;
+    about?: string;
   };
   detail?: string;
   error?: string;
@@ -222,7 +223,7 @@ export const userService = {
   const res = await fetchWithAuth(`/users/${encodeURIComponent(username)}/`, { method: "GET" });
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<{
-    id: number; username: string; role: string;
+    id: number; username: string; role: string; about: string;
     profile_picture: string | null; follower_count: number; is_following: boolean;
   }>;
 },

@@ -6,7 +6,7 @@ from .models import User, Song
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
     # Columns in the list page
-    list_display = ("username", "role", "follower_count", "avatar_thumb", "is_staff", "is_active")
+    list_display = ("username", "role", "about", "follower_count", "avatar_thumb", "is_staff", "is_active")
     list_filter = ("role", "is_staff", "is_active", "is_superuser")
     search_fields = ("username", "email")
     ordering = ("username",)
@@ -16,7 +16,7 @@ class UserAdmin(DjangoUserAdmin):
 
     # Show profile picture + following in the form
     fieldsets = DjangoUserAdmin.fieldsets + (
-        ("Profile", {"fields": ("role", "profile_picture", "follower_count")}),
+        ("Profile", {"fields": ("role", "about", "profile_picture", "follower_count")}),
         ("Social", {"fields": ("following",)}),
     )
 
