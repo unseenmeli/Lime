@@ -9,6 +9,7 @@ export default function UploadSongForm() {
   const [desc, setDesc] = useState("");
   const [cover, setCover] = useState<File | null>(null);
   const [msg, setMsg] = useState("");
+  const [genre, setGenre] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,6 +24,7 @@ export default function UploadSongForm() {
         description: desc,
         audioFile: audio,
         coverFile: cover || undefined,
+        genre,
       });
       setMsg(`Uploaded: ${song.title}`);
       setTitle("");
@@ -82,7 +84,20 @@ export default function UploadSongForm() {
                 onChange={(e) => setDesc(e.target.value)}
               />
             </div>
-
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-lg">Genre (no spaces)</label>
+              <input
+                type="text"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value.replace(/\s+/g, ""))} // strip spaces
+                placeholder="#techno or techno"
+                maxLength={30}
+                className="border-2 border-gray-300 rounded-lg px-4 py-3 text-lg focus:outline-none focus:border-black transition-colors"
+              />
+              <p className="text-xs text-gray-500">
+                Example: house, techno, lofi
+              </p>
+            </div>
             <div className="flex flex-col gap-2">
               <label className="font-semibold text-lg">Audio File *</label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-black transition-colors">

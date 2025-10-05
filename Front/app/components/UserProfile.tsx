@@ -1,8 +1,9 @@
 "use client";
 
 import { use, useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { userService, songService } from "@/app/services/api";
+import Link from "next/link";
 
 type UserDTO = {
   id: number;
@@ -24,10 +25,12 @@ type SongItem = {
   liked_by_me: boolean;
   owner?: { username: string };
   waveform_data?: number[] | null;
+  genre?: string | null;
 };
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
+  const router = useRouter();
   const [user, setUser] = useState<UserDTO | null>(null);
   const [songs, setSongs] = useState<SongItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +49,7 @@ export default function UserProfile() {
   const [nowPlayingId, setNowPlayingId] = useState<number | null>(null);
 
   const [winPos, setWinPos] = useState<{ x: number; y: number }>({
-    x: 700,
+    x: 900,
     y: 190,
   });
   const dragRef = useRef<{
@@ -104,6 +107,7 @@ export default function UserProfile() {
             liked_by_me: s.liked_by_me,
             owner: s.owner,
             waveform_data: s.waveform_data,
+            genre: s.genre || null,
           }))
         );
       } catch (e: any) {
@@ -148,6 +152,12 @@ export default function UserProfile() {
     };
   }, [menuOpenId]);
   // Menu click END
+
+  function hashTag(g?: string | null) {
+    if (!g) return "";
+    const s = g.startsWith("#") ? g.slice(1) : g;
+    return `#${s}`;
+  }
 
   async function toggleFollow() {
     if (!user || isSelf || saving) return;
@@ -442,9 +452,9 @@ export default function UserProfile() {
                 {/* cover */}
                 <button
                   type="button"
-                  onClick={() => openDesc(song.id)}
+                  onClick={() => router.push(`/song/${song.id}`)}
                   className="w-30 h-30 shadow-[0_0_10px_rgba(0,0,0,0.5)] focus:outline-none focus:ring-2 focus:ring-white/60 rounded overflow-hidden"
-                  aria-label={`View description for ${song.title} by ${song.owner}`}
+                  aria-label={`View detailed page for ${song.title} by ${song.owner}`}
                 >
                   {song.cover ? (
                     <img
@@ -462,23 +472,23 @@ export default function UserProfile() {
                 {/* waveform + title + menu (unchanged logic, slight positioning tweak only) */}
                 <div className="flex flex-col gap-2 flex-1">
                   <div className="flex items-center gap-[2px] h-12 relative">
-                    {song.waveform_data && song.waveform_data.length > 0 ? (
-                      song.waveform_data.slice(0, 30).map((value, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 bg-gray-400"
-                          style={{ height: `${value * 100}%` }}
-                        />
-                      ))
-                    ) : (
-                      [...Array(30)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 bg-gray-400"
-                          style={{ height: "50%" }}
-                        />
-                      ))
-                    )}
+                    {song.waveform_data && song.waveform_data.length > 0
+                      ? song.waveform_data
+                          .slice(0, 30)
+                          .map((value, i) => (
+                            <div
+                              key={i}
+                              className="flex-1 bg-gray-400"
+                              style={{ height: `${value * 100}%` }}
+                            />
+                          ))
+                      : [...Array(30)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="flex-1 bg-gray-400"
+                            style={{ height: "50%" }}
+                          />
+                        ))}
                     <p
                       className="absolute inset-0 flex items-center justify-center text-green-200 font text-lg pointer-events-none"
                       style={{
@@ -593,6 +603,25 @@ export default function UserProfile() {
                         </button>
                       );
                     })()}
+                    <div className="pt-1">
+                      <div>
+                        {song.genre ? (
+                          <Link
+                            className="inline-block text-sm px-2 py-1 rounded-full border border-blue/70 bg-blue/60 hover:bg-blue/80 shadow"
+                            href={`/search?q=${encodeURIComponent(
+                              song.genre.startsWith("#")
+                                ? song.genre.slice(1)
+                                : song.genre
+                            )}`}
+                            title="search songs with this genre"
+                          >
+                            {hashTag(song.genre)}
+                          </Link>
+                        ) : (
+                          <span className="text-sm text-gray-500">—</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 

@@ -29,6 +29,12 @@ interface AuthResponse {
   password?: string | string[];
   password2?: string | string[];
 }
+
+function normalizeGenre(input: string) {
+  const s = (input || "").trim();
+  return s.startsWith("#") ? s.slice(1) : s;
+}
+
 export const authService = {
   // ---------- storage helpers ----------
   setTokens(access: string, refresh: string) {
@@ -241,6 +247,7 @@ export type SongDTO = {
   duration_seconds: number | null;
   plays: number;
   created_at: string;
+  genre?: string | null;
 };
 
 export const songService = {
@@ -256,6 +263,7 @@ export const songService = {
     is_public?: boolean;
     audioFile: File;
     coverFile?: File | null;
+    genre?: string;
   }): Promise<SongDTO> {
     const form = new FormData();
     form.append("title", params.title);
@@ -263,6 +271,7 @@ export const songService = {
     form.append("is_public", String(params.is_public ?? true));
     form.append("audio", params.audioFile);
     if (params.coverFile) form.append("cover", params.coverFile);
+    if (params.genre) form.append("genre", normalizeGenre(params.genre));
 
     const res = await fetchWithAuth(`/songs/`, { method: "POST", body: form } as RequestInit);
     if (!res.ok) throw new Error(await res.text());
@@ -271,8 +280,10 @@ export const songService = {
 
   async updateSong(
     id: number,
-    payload: Partial<{title: string; description: string; is_public: boolean}>
+    payload: Partial<{title: string; description: string; is_public: boolean; genre: string}>
   ) {
+    const body = { ...payload };
+    if (body.genre != null) body.genre = normalizeGenre(body.genre);
     const res = await fetchWithAuth(`/songs/${id}/`, {
       method: "PATCH",
       body: JSON.stringify(payload),
@@ -296,6 +307,14 @@ export const songService = {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
+
+  async searchSongsByGenre(q: string): Promise<SongDTO[]> {
+  const g = normalizeGenre(q);
+  if (!g || g.includes(" ")) return []; // genres have no spaces
+  const res = await fetchWithAuth(`/songs/?genre=${encodeURIComponent(g)}`, { method: "GET" });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+},
 };
 
 
