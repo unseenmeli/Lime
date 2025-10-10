@@ -58,14 +58,22 @@ class LogoutView(APIView):
     
 
 class UserSearchView(ListAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     serializer_class = PublicUserSerializer
 
     def get_queryset(self):
-        q = self.request.query_params.get("q", "").strip()
-        if not q or len(q) < 2:
+        q = (self.request.query_params.get("q") or "").strip()
+        role = (self.request.query_params.get("role") or "").strip().upper()
+        
+        if len(q) < 2:
             return User.objects.none()
-        return User.objects.filter(username__icontains=q).order_by("username")[:20]
+        
+        qs = User.objects.filter(username__icontains=q)
+        
+        if role in ("ARTIST", "LISTENER"):
+            qs = qs.filter(role=role)
+
+        return qs.order_by("username")[:20]
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()
@@ -137,22 +145,19 @@ class SongViewSet(viewsets.ModelViewSet):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ["genre"]
+    search_fields = ["title", "genre", "owner__username", "description"]
 
 
     def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated:
-            qs = Song.objects.filter(Q(is_public=True) | Q(owner=user))
+        user = self.request.user if self.request.user.is_authenticated else None
+        qs = Song.objects.all()
+        if user:
+            qs = qs.filter(Q(is_public=True) | Q(owner=user))
         else:
-            qs = Song.objects.filter(is_public=True)
+            qs = qs.filter(is_public=True)
 
-        # NEW: direct param /api/songs/?genre=house (or #house)
-        g = self.request.query_params.get("genre")
-        if g:
-            qs = qs.filter(genre__iexact=_norm_genre_param(g))
+        return qs.select_related("owner")
 
-        return qs
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()

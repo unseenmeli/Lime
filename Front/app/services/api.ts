@@ -209,10 +209,13 @@ export async function fetchWithAuth(path: string, init: RequestInit = {}): Promi
 
 
 export const userService = {
-  async searchUsers(q: string) {
-    const res = await fetchWithAuth(`/users/search/?q=${encodeURIComponent(q)}`, { method: "GET" });
+  async searchUsers(q: string, opts?: { role?: "ARTIST" | "LISTENER"; limit?: number }) {
+    const params = new URLSearchParams({ q });
+    if (opts?.role) params.set("role", opts.role);
+    const res = await fetchWithAuth(`/users/search/?${params.toString()}`, { method: "GET" });
     if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    const data = await res.json();
+    return opts?.limit ? data.slice(0, opts.limit) : data;
   },
   async follow(username: string) {
     const res = await fetchWithAuth(`/users/${encodeURIComponent(username)}/follow/`, { method: "POST" });
@@ -235,6 +238,9 @@ export const userService = {
 
 };
 
+function stripHash(s: string) {
+  return s.startsWith("#") ? s.slice(1) : s;
+}
 
 export type SongDTO = {
   id: number;
@@ -308,13 +314,18 @@ export const songService = {
     return res.json();
   },
 
-  async searchSongsByGenre(q: string): Promise<SongDTO[]> {
-  const g = normalizeGenre(q);
-  if (!g || g.includes(" ")) return []; // genres have no spaces
-  const res = await fetchWithAuth(`/songs/?genre=${encodeURIComponent(g)}`, { method: "GET" });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-},
+  async searchSongsMulti(q: string, opts?: { limit?: number }) {
+    const query = (q || "").trim();
+    if (!query) return [];
+
+    // If the user typed a hashtag, remove it so 'genre' icontains works.
+    const normalized = stripHash(query);
+
+    const res = await fetchWithAuth(`/songs/?search=${encodeURIComponent(normalized)}`, { method: "GET" });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    return opts?.limit ? data.slice(0, opts.limit) : data;
+  },
 };
 
 
