@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
+from django.core.validators import RegexValidator
 
 class User(AbstractUser):
     class Roles(models.TextChoices):
@@ -38,6 +39,14 @@ class Song(models.Model):
     audio = models.FileField(upload_to=audio_upload_to)
     cover = models.ImageField(upload_to=cover_upload_to, blank=True, null=True)
     is_public = models.BooleanField(default=True)
+
+    genre = models.CharField(
+        max_length=30,
+        blank=True,
+        db_index=True,
+        validators=[RegexValidator(r"^\S*$", "Genre cannot contain spaces.")],
+        help_text="Single tag without spaces, e.g. house or #house",
+    )
 
     duration_seconds = models.PositiveIntegerField(blank=True, null=True)
     plays = models.PositiveIntegerField(default=0)

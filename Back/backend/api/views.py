@@ -1,4 +1,4 @@
-from rest_framework import permissions, status, viewsets, mixins, decorators, response
+from rest_framework import permissions, status, viewsets, mixins, decorators, response, filters  
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
@@ -9,9 +9,11 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.shortcuts import get_object_or_404
 from .models import Song
 from .permissions import IsOwnerOrReadOnly
+from django.utils.text import slugify
 from django.db.models import Q
 from django.http import Http404
 from django.conf import settings
+import re
 import os
 from .utils import serve_audio_with_range
 
@@ -56,14 +58,22 @@ class LogoutView(APIView):
     
 
 class UserSearchView(ListAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     serializer_class = PublicUserSerializer
 
     def get_queryset(self):
-        q = self.request.query_params.get("q", "").strip()
-        if not q or len(q) < 2:
+        q = (self.request.query_params.get("q") or "").strip()
+        role = (self.request.query_params.get("role") or "").strip().upper()
+        
+        if len(q) < 2:
             return User.objects.none()
-        return User.objects.filter(username__icontains=q).order_by("username")[:20]
+        
+        qs = User.objects.filter(username__icontains=q)
+        
+        if role in ("ARTIST", "LISTENER"):
+            qs = qs.filter(role=role)
+
+        return qs.order_by("username")[:20]
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()
@@ -117,6 +127,11 @@ class UserDetailView(RetrieveAPIView):
         ctx["request"] = self.request
         return ctx
     
+def _norm_genre_param(s: str) -> str:
+    s = (s or "").strip()
+    if s.startswith("#"):
+        s = s[1:]
+    return s 
 
 class SongViewSet(viewsets.ModelViewSet):
     """
@@ -129,11 +144,20 @@ class SongViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["title", "genre", "owner__username", "description"]
+
+
     def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated:
-            return Song.objects.filter(Q(is_public=True) | Q(owner=user))
-        return Song.objects.filter(is_public=True)
+        user = self.request.user if self.request.user.is_authenticated else None
+        qs = Song.objects.all()
+        if user:
+            qs = qs.filter(Q(is_public=True) | Q(owner=user))
+        else:
+            qs = qs.filter(is_public=True)
+
+        return qs.select_related("owner")
+
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()

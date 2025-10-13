@@ -84,6 +84,7 @@ class SongSerializer(serializers.ModelSerializer):
             "duration_seconds", "plays",
             "likes_count", "liked_by_me",
             "waveform_data",
+            "genre",
             "created_at",
         )
         read_only_fields = ("duration_seconds", "plays", "created_at", "owner", "likes_count", "liked_by_me", "waveform_data")
@@ -107,6 +108,16 @@ class SongSerializer(serializers.ModelSerializer):
         if ext not in {".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg"}:
             raise serializers.ValidationError("Unsupported audio format.")
         return f
+
+    def validate_genre(self, value):
+        if value is None:
+            return value
+        g = value.strip()
+        if g.startswith("#"):
+            g = g[1:]
+        if " " in g:
+            raise serializers.ValidationError("Genre cannot contain spaces.")
+        return g.lower()
 
     def create(self, validated_data):
         request = self.context["request"]
