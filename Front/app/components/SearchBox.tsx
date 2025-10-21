@@ -29,8 +29,22 @@ export default function SearchBox({
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
-  // Debounced quick search (users + songs by genre if no spaces)
+  useEffect(() => {
+    const checkTheme = () => {
+      const body = document.body;
+      const currentTheme = body.className.includes('bg-black') ? 'dark' : 'light';
+      setTheme(currentTheme);
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -49,18 +63,19 @@ export default function SearchBox({
     onSearch?.(query);
   };
 
+  const isDark = theme === "dark";
+
   return (
     <div
       ref={wrapRef}
       className="relative flex-1 py-0.5 flex-row flex items-center gap-2"
     >
-      {/* Magnifier (click to submit) */}
       <button
         type="button"
         aria-label="Search"
         className={`text-4xl leading-none cursor-pointer transition-colors duration-200 ${
-          hoveredElement === "search" ? "text-gray-400" : ""
-        }`}
+          isDark ? 'text-white' : 'text-black'
+        } ${hoveredElement === "search" ? "text-gray-400" : ""}`}
         onMouseEnter={() => handleHover("search")}
         onMouseLeave={() => handleHover(null)}
         onClick={submitSearch}
@@ -68,7 +83,6 @@ export default function SearchBox({
         ⌕
       </button>
 
-      {/* Input */}
       <input
         type="text"
         value={q}
@@ -81,17 +95,21 @@ export default function SearchBox({
           if (e.key === "Enter") submitSearch();
         }}
         placeholder="Search here..."
-        className={`px-2 py-3 border-2 w-11/12 h-8 border-black rounded-lg bg-black/5 cursor-text transition-opacity duration-200 focus:outline-none focus:border-black ${
-          hoveredElement === "searchBar" ? "opacity-50" : ""
-        }`}
+        className={`px-2 py-3 border-2 w-11/12 h-8 rounded-lg cursor-text transition-opacity duration-200 focus:outline-none ${
+          isDark
+            ? 'border-white bg-white/5 text-white placeholder-gray-400 focus:border-white'
+            : 'border-black bg-black/5 text-black focus:border-black'
+        } ${hoveredElement === "searchBar" ? "opacity-50" : ""}`}
         onMouseEnter={() => handleHover("searchBar")}
         onMouseLeave={() => handleHover(null)}
       />
 
       {open && (
-        <div className="absolute left-8 right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-md max-h-80 overflow-auto">
+        <div className={`absolute left-8 right-0 top-12 border rounded-lg shadow-md max-h-80 overflow-auto ${
+          isDark ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
+        }`}>
           {q.trim().length < 2 ? (
-            <div className="p-3 text-sm text-gray-500">
+            <div className={`p-3 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
               Type at least 2 characters…
             </div>
           ) : (
@@ -103,7 +121,9 @@ export default function SearchBox({
               ].map(({ label, type }) => (
                 <button
                   key={type}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center justify-between"
+                  className={`w-full text-left px-3 py-2 flex items-center justify-between ${
+                    isDark ? 'hover:bg-gray-900 text-white' : 'hover:bg-gray-50 text-black'
+                  }`}
                   onClick={() => {
                     setOpen(false);
                     setQ("");
@@ -113,9 +133,9 @@ export default function SearchBox({
                   }}
                 >
                   <span>
-                    Search for “{q.trim()}” in {label}
+                    Search for "{q.trim()}" in {label}
                   </span>
-                  <span className="text-xs text-gray-500">↵</span>
+                  <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>↵</span>
                 </button>
               ))}
             </>

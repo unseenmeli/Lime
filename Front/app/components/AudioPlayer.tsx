@@ -13,7 +13,28 @@ type Track = {
 };
 
 export default function AudioPlayer() {
-  const [tracks, setTracks] = useState<Track[]>([]); // NEW
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [tracks, setTracks] = useState<Track[]>([]);
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const body = document.body;
+      const currentTheme = body.className.includes("bg-black")
+        ? "dark"
+        : "light";
+      setTheme(currentTheme);
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []); // NEW
 
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -112,7 +133,10 @@ export default function AudioPlayer() {
 
     window.addEventListener("player:play", onExternalPlay as EventListener);
     return () => {
-      window.removeEventListener("player:play", onExternalPlay as EventListener);
+      window.removeEventListener(
+        "player:play",
+        onExternalPlay as EventListener
+      );
     };
   }, []);
   const eqPanelRef = useRef<HTMLDivElement>(null);
@@ -313,7 +337,12 @@ export default function AudioPlayer() {
     const newTime = parseFloat(e.target.value);
     const audio = audioRef.current;
 
-    if (audio && audio.duration && !isNaN(audio.duration) && audio.duration > 0) {
+    if (
+      audio &&
+      audio.duration &&
+      !isNaN(audio.duration) &&
+      audio.duration > 0
+    ) {
       const clampedTime = Math.max(0, Math.min(newTime, audio.duration));
       audio.currentTime = clampedTime;
       setCurrentTime(clampedTime);
@@ -358,28 +387,40 @@ export default function AudioPlayer() {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  const isDark = theme === "dark";
+
   return (
-    <div className="flex items-center w-full h-full px-4">
+    <div
+      className={`flex items-center w-full h-full px-4 ${
+        isDark ? "bg-black" : "bg-white"
+      }`}
+    >
       <audio ref={audioRef} onEnded={nextTrack} />
 
       <div className="flex items-center gap-2">
         <button
           onClick={previousTrack}
-          className="text-black hover:text-gray-500 transition-colors text-lg px-2"
+          className={`hover:text-gray-500 transition-colors text-lg px-2 ${
+            isDark ? "text-white" : "text-black"
+          }`}
         >
           ◄
         </button>
 
         <button
           onClick={togglePlayPause}
-          className="px-3 py-1 text-black hover:text-gray-500 transition-colors text-lg"
+          className={`px-3 py-1 hover:text-gray-500 transition-colors text-lg ${
+            isDark ? "text-white" : "text-black"
+          }`}
         >
           {isPlaying ? "❚❚" : "▶"}
         </button>
 
         <button
           onClick={nextTrack}
-          className="text-black hover:text-gray-500 transition-colors text-lg px-2"
+          className={`hover:text-gray-500 transition-colors text-lg px-2 ${
+            isDark ? "text-white" : "text-black"
+          }`}
         >
           ►
         </button>
@@ -388,9 +429,13 @@ export default function AudioPlayer() {
       <div className="flex-1 mx-8">
         <div className="relative">
           <div className="text-sm mb-2">
-            <span className="text-black">{currentTrack.title}</span>
+            <span className={isDark ? "text-white" : "text-black"}>
+              {currentTrack.title}
+            </span>
             <span className="text-gray-400 mx-2">-</span>
-            <span className="text-gray-600">{currentTrack.artist}</span>
+            <span className={isDark ? "text-gray-300" : "text-gray-600"}>
+              {currentTrack.artist}
+            </span>
           </div>
 
           <div className="relative h-8">
@@ -438,20 +483,28 @@ export default function AudioPlayer() {
           className="w-14 h-14 rounded mr-4 object-cover"
         />
       ) : (
-        <div className="w-14 h-14 rounded mr-4 bg-gray-200 flex items-center justify-center text-gray-500">
+        <div
+          className={`w-14 h-14 rounded mr-4 flex items-center justify-center ${
+            isDark ? "bg-gray-800 text-gray-400" : "bg-gray-200 text-gray-500"
+          }`}
+        >
           ♪
         </div>
       )}
 
       <div className="relative flex items-center">
         <button
-          className="text-sm text-black hover:text-gray-500 transition-colors px-3"
+          className={`text-sm hover:text-gray-500 transition-colors px-3 ${
+            isDark ? "text-white" : "text-black"
+          }`}
           onClick={() => setShowVolumeSlider(!showVolumeSlider)}
         >
           volume
         </button>
         <button
-          className="text-xl opacity-90 hover:opacity-60"
+          className={`text-xl opacity-90 hover:opacity-60 ${
+            isDark ? "text-white" : "text-black"
+          }`}
           onClick={() => {
             setSettingsForMusic(true);
             initializeAudioContext();
@@ -463,7 +516,9 @@ export default function AudioPlayer() {
         {settingsForMusic && (
           <div
             ref={eqPanelRef}
-            className="fixed bg-white border-2 border-gray-300 p-6 shadow-lg z-150 overflow-hidden"
+            className={`fixed border-2 p-6 shadow-lg z-150 overflow-hidden ${
+              isDark ? "bg-black border-gray-800" : "bg-white border-gray-300"
+            }`}
             style={{
               width: "420px",
               left: `calc(50% + ${eqPosition.x}px)`,
@@ -473,12 +528,14 @@ export default function AudioPlayer() {
           >
             <img
               src="/eq_background.png"
-              className="absolute inset-0 w-180 h-80 object-cover opacity-30 scale-150 -z-10"
+              className="absolute inset-0 w-180 h-80 object-cover opacity-40 scale-150 -z-10 contrast-150"
               alt=""
             />
             <div className="flex flex-col gap-4 relative z-10">
               <div
-                className="border-b-2 border-gray-300 pb-3 flex items-center justify-between cursor-move"
+                className={`border-b-2 pb-3 flex items-center justify-between cursor-move ${
+                  isDark ? "border-gray-800" : "border-gray-300"
+                }`}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   setIsDragging(true);
@@ -492,32 +549,50 @@ export default function AudioPlayer() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={previousTrack}
-                      className="text-black hover:text-gray-500 transition-colors text-lg"
+                      className={`hover:text-gray-500 transition-colors text-lg ${
+                        isDark ? "text-white" : "text-black"
+                      }`}
                     >
                       ◄
                     </button>
                     <button
                       onClick={togglePlayPause}
-                      className="px-2 text-black hover:text-gray-500 transition-colors text-lg"
+                      className={`px-2 hover:text-gray-500 transition-colors text-lg ${
+                        isDark ? "text-white" : "text-black"
+                      }`}
                     >
                       {isPlaying ? "❚❚" : "▶"}
                     </button>
                     <button
                       onClick={nextTrack}
-                      className="text-black hover:text-gray-500 transition-colors text-lg"
+                      className={`hover:text-gray-500 transition-colors text-lg ${
+                        isDark ? "text-white" : "text-black"
+                      }`}
                     >
                       ►
                     </button>
                   </div>
                   <div className="select-none">
-                    <p className="font-bold text-lg">equalizer</p>
-                    <p className="text-xs text-gray-600">
+                    <p
+                      className={`font-bold text-lg ${
+                        isDark ? "text-white" : "text-black"
+                      }`}
+                    >
+                      equalizer
+                    </p>
+                    <p
+                      className={`text-xs ${
+                        isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
+                    >
                       {currentTrack.title}
                     </p>
                   </div>
                 </div>
                 <button
-                  className="text-2xl hover:opacity-50 transition-opacity"
+                  className={`text-2xl hover:opacity-50 transition-opacity ${
+                    isDark ? "text-white" : "text-black"
+                  }`}
                   onClick={() => setSettingsForMusic(false)}
                 >
                   ×
@@ -526,9 +601,19 @@ export default function AudioPlayer() {
 
               <div className="flex gap-6">
                 <div className="flex flex-col items-center gap-2">
-                  <p className="text-xs font-bold">volume</p>
+                  <p
+                    className={`text-xs font-bold ${
+                      isDark ? "text-white" : "text-black"
+                    }`}
+                  >
+                    volume
+                  </p>
                   <div className="h-32 w-8 relative flex items-center justify-center">
-                    <div className="absolute h-full w-2 bg-gray-200"></div>
+                    <div
+                      className={`absolute h-full w-2 ${
+                        isDark ? "bg-gray-700" : "bg-gray-200"
+                      }`}
+                    ></div>
                     <div
                       className="absolute h-full w-full cursor-pointer"
                       onMouseDown={(e) => {
@@ -558,11 +643,19 @@ export default function AudioPlayer() {
                       }}
                     ></div>
                     <div
-                      className="absolute w-4 h-1 bg-black pointer-events-none"
+                      className={`absolute w-4 h-1 pointer-events-none ${
+                        isDark ? "bg-white" : "bg-black"
+                      }`}
                       style={{ top: `${100 - eqVolume}%` }}
                     ></div>
                   </div>
-                  <p className="text-xs">{eqVolume}%</p>
+                  <p
+                    className={`text-xs ${
+                      isDark ? "text-white" : "text-black"
+                    }`}
+                  >
+                    {eqVolume}%
+                  </p>
                 </div>
 
                 <div className="flex-1 flex justify-around">
@@ -571,9 +664,19 @@ export default function AudioPlayer() {
                       key={freq}
                       className="flex flex-col items-center gap-2"
                     >
-                      <p className="text-xs">{freq}</p>
+                      <p
+                        className={`text-xs ${
+                          isDark ? "text-white" : "text-black"
+                        }`}
+                      >
+                        {freq}
+                      </p>
                       <div className="h-32 w-8 relative flex items-center justify-center">
-                        <div className="absolute h-full w-2 bg-gray-200"></div>
+                        <div
+                          className={`absolute h-full w-2 ${
+                            isDark ? "bg-gray-700" : "bg-gray-200"
+                          }`}
+                        ></div>
                         <div
                           className="absolute h-full w-full cursor-pointer"
                           onMouseDown={(e) => {
@@ -612,11 +715,17 @@ export default function AudioPlayer() {
                           }}
                         ></div>
                         <div
-                          className="absolute w-4 h-1 bg-black pointer-events-none"
+                          className={`absolute w-4 h-1 pointer-events-none ${
+                            isDark ? "bg-white" : "bg-black"
+                          }`}
                           style={{ top: `${100 - value}%` }}
                         ></div>
                       </div>
-                      <p className="text-xs text-gray-600">
+                      <p
+                        className={`text-xs ${
+                          isDark ? "text-gray-400" : "text-gray-600"
+                        }`}
+                      >
                         {Math.round((value - 50) * 0.24)}dB
                       </p>
                     </div>
@@ -624,13 +733,23 @@ export default function AudioPlayer() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-3 border-t-2 border-gray-300">
+              <div
+                className={`flex justify-between items-center pt-3 border-t-2 ${
+                  isDark ? "border-gray-800" : "border-gray-300"
+                }`}
+              >
                 <div className="flex gap-3">
-                  <button className="text-sm hover:opacity-50 transition-opacity">
+                  <button
+                    className={`text-sm hover:opacity-50 transition-opacity ${
+                      isDark ? "text-white" : "text-black"
+                    }`}
+                  >
                     presets
                   </button>
                   <button
-                    className="text-sm hover:opacity-50 transition-opacity"
+                    className={`text-sm hover:opacity-50 transition-opacity ${
+                      isDark ? "text-white" : "text-black"
+                    }`}
                     onClick={() => {
                       setEqVolume(70);
                       setEqBands({
@@ -648,7 +767,13 @@ export default function AudioPlayer() {
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" className="w-4 h-4" defaultChecked />
-                  <span className="text-sm">enabled</span>
+                  <span
+                    className={`text-sm ${
+                      isDark ? "text-white" : "text-black"
+                    }`}
+                  >
+                    enabled
+                  </span>
                 </label>
               </div>
             </div>
@@ -657,11 +782,17 @@ export default function AudioPlayer() {
 
         {showVolumeSlider && (
           <div
-            className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 bg-white border border-gray-200 p-3 rounded-md shadow-lg"
+            className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 border p-3 rounded-md shadow-lg ${
+              isDark ? "bg-black border-gray-800" : "bg-white border-gray-200"
+            }`}
             style={{ width: "120px" }}
           >
             <div className="flex flex-col items-center gap-2">
-              <span className="text-[10px] text-gray-500">
+              <span
+                className={`text-[10px] ${
+                  isDark ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
                 {Math.round(volume * 100)}%
               </span>
               <div className="relative w-full py-2">
