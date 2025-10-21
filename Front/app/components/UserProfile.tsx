@@ -31,6 +31,7 @@ type SongItem = {
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
   const router = useRouter();
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [user, setUser] = useState<UserDTO | null>(null);
   const [songs, setSongs] = useState<SongItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +46,21 @@ export default function UserProfile() {
   const [descOpenId, setDescOpenId] = useState<number | null>(null);
   const [macWebTools, setMacWebTools] = useState(false);
   const [profileMusicExpand, setProfileMusicExpand] = useState(false);
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const body = document.body;
+      const currentTheme = body.className.includes('bg-black') ? 'dark' : 'light';
+      setTheme(currentTheme);
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [nowPlayingId, setNowPlayingId] = useState<number | null>(null);
@@ -304,9 +320,11 @@ export default function UserProfile() {
     }
   }
 
-  if (loading) return <div className="p-6">Loading…</div>;
+  const isDark = theme === "dark";
+
+  if (loading) return <div className={`p-6 ${isDark ? 'text-white' : 'text-black'}`}>Loading…</div>;
   if (err) return <div className="p-6 text-red-600">{err}</div>;
-  if (!user) return <div className="p-6">User not found</div>;
+  if (!user) return <div className={`p-6 ${isDark ? 'text-white' : 'text-black'}`}>User not found</div>;
 
   function onBarDown(e: React.PointerEvent) {
     if (e.button !== 0) return;
@@ -341,7 +359,9 @@ export default function UserProfile() {
         src="/profile_background.jpg"
         alt=""
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-white via-transparent to-white -z-[9]" />
+      <div className={`absolute inset-0 -z-[9] ${
+        isDark ? 'bg-gradient-to-r from-black via-transparent to-black' : 'bg-gradient-to-r from-white via-transparent to-white'
+      }`} />
 
       {/* hidden shared audio element */}
       <audio ref={audioRef} onEnded={() => setNowPlayingId(null)} />
@@ -351,7 +371,9 @@ export default function UserProfile() {
         <button
           onClick={toggleFollow}
           disabled={isSelf || saving}
-          className="font text-2xl hover:opacity-70 disabled:opacity-50"
+          className={`font text-2xl hover:opacity-70 disabled:opacity-50 ${
+            isDark ? 'text-white' : 'text-black'
+          }`}
         >
           {isSelf
             ? "you"
@@ -367,7 +389,7 @@ export default function UserProfile() {
       <div className="flex-row flex">
         <div className="h-full w-100">
           <div className="flex justify-center items-center h-full flex-col">
-            <p className="font text-3xl pb-2">
+            <p className={`font text-3xl pb-2 ${isDark ? 'text-white' : 'text-black'}`}>
               {user.username}
               {" - "}
               {user.follower_count.toLocaleString()}
@@ -380,7 +402,9 @@ export default function UserProfile() {
                 alt={`${user.username} avatar`}
               />
             ) : (
-              <div className="w-70 h-70 border-2 shadow-[0_0_10px_rgba(0,0,0,0.5)] bg-gray-300 flex items-center justify-center">
+              <div className={`w-70 h-70 border-2 shadow-[0_0_10px_rgba(0,0,0,0.5)] flex items-center justify-center ${
+                isDark ? 'bg-gray-800' : 'bg-gray-300'
+              }`}>
                 <span className="text-4xl text-white font">
                   {user.username[0]?.toUpperCase()}
                 </span>
@@ -391,9 +415,13 @@ export default function UserProfile() {
 
         {profileMusicExpand && (
           <div className="fixed inset-0 z-[60] bg-black/30 flex items-center justify-center">
-            <div className="w-[90vw] h-[85vh] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] border border-gray-300 overflow-hidden backdrop-blur-md bg-white/95">
-              <div className="h-14 px-6 flex items-center justify-between bg-white/30 border-b border-white/70">
-                <span className="font text-2xl">tracks</span>
+            <div className={`w-[90vw] h-[85vh] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] border overflow-hidden backdrop-blur-md ${
+              isDark ? 'border-gray-800 bg-black/95' : 'border-gray-300 bg-white/95'
+            }`}>
+              <div className={`h-14 px-6 flex items-center justify-between border-b ${
+                isDark ? 'bg-black/30 border-gray-800' : 'bg-white/30 border-white/70'
+              }`}>
+                <span className={`font text-2xl ${isDark ? 'text-white' : 'text-black'}`}>tracks</span>
                 <button
                   className="w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-white text-xs cursor-pointer"
                   onClick={() => setProfileMusicExpand(false)}
@@ -402,13 +430,17 @@ export default function UserProfile() {
                   ×
                 </button>
               </div>
-              <div className="bg-white/95 h-[calc(100%-56px)] overflow-auto p-6">
+              <div className={`h-[calc(100%-56px)] overflow-auto p-6 ${
+                isDark ? 'bg-black/95' : 'bg-white/95'
+              }`}>
                 {songs.length === 0 && (
-                  <div className="py-4 text-gray-600 text-lg">No tracks yet.</div>
+                  <div className={`py-4 text-lg ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>No tracks yet.</div>
                 )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {songs.map((song) => (
-                    <div key={song.id} className="flex items-center gap-6 p-4 bg-white rounded-lg shadow-md">
+                    <div key={song.id} className={`flex items-center gap-6 p-4 rounded-lg shadow-md ${
+                      isDark ? 'bg-gray-900' : 'bg-white'
+                    }`}>
                       <button
                         type="button"
                         onClick={() => router.push(`/song/${song.id}`)}
@@ -422,7 +454,9 @@ export default function UserProfile() {
                             alt={`${song.title} cover`}
                           />
                         ) : (
-                          <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                          <div className={`w-full h-full flex items-center justify-center ${
+                            isDark ? 'bg-gray-800' : 'bg-gray-300'
+                          }`}>
                             <span className="text-3xl text-white font">♪</span>
                           </div>
                         )}
@@ -436,14 +470,14 @@ export default function UserProfile() {
                                 .map((value, i) => (
                                   <div
                                     key={i}
-                                    className="flex-1 bg-gray-400 rounded"
+                                    className={`flex-1 rounded ${isDark ? 'bg-gray-600' : 'bg-gray-400'}`}
                                     style={{ height: `${value * 100}%` }}
                                   />
                                 ))
                             : [...Array(40)].map((_, i) => (
                                 <div
                                   key={i}
-                                  className="flex-1 bg-gray-400 rounded"
+                                  className={`flex-1 rounded ${isDark ? 'bg-gray-600' : 'bg-gray-400'}`}
                                   style={{ height: "50%" }}
                                 />
                               ))}
@@ -464,7 +498,9 @@ export default function UserProfile() {
                                   if (el) buttonRefs.current.set(song.id, el);
                                   else buttonRefs.current.delete(song.id);
                                 }}
-                                className="text-2xl px-2 hover:opacity-70 bg-white/80 rounded"
+                                className={`text-2xl px-2 hover:opacity-70 rounded ${
+                                  isDark ? 'bg-black/80 text-white' : 'bg-white/80 text-black'
+                                }`}
                                 onClick={() =>
                                   setMenuOpenId(
                                     menuOpenId === song.id ? null : song.id
@@ -482,25 +518,33 @@ export default function UserProfile() {
                                     if (el) menuRefs.current.set(song.id, el);
                                     else menuRefs.current.delete(song.id);
                                   }}
-                                  className="absolute top-full right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-40"
+                                  className={`absolute top-full right-0 mt-2 w-40 border rounded shadow-lg z-40 ${
+                                    isDark ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
+                                  }`}
                                   role="menu"
                                   aria-labelledby={`song-menu-${song.id}`}
                                 >
                                   <button
-                                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                                    className={`block w-full text-left px-4 py-2 ${
+                                      isDark ? 'hover:bg-gray-900 text-white' : 'hover:bg-gray-100 text-black'
+                                    }`}
                                     disabled={busyId === song.id}
                                     onClick={() => toggleVisibility(song)}
                                   >
                                     {song.is_public ? "Make private" : "Make public"}
                                   </button>
                                   <button
-                                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                                    className={`block w-full text-left px-4 py-2 ${
+                                      isDark ? 'hover:bg-gray-900 text-white' : 'hover:bg-gray-100 text-black'
+                                    }`}
                                     onClick={() => startEdit(song)}
                                   >
                                     Edit
                                   </button>
                                   <button
-                                    className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
+                                    className={`block w-full text-left px-4 py-2 text-red-600 ${
+                                      isDark ? 'hover:bg-red-900' : 'hover:bg-red-50'
+                                    }`}
                                     disabled={busyId === song.id}
                                     onClick={() => deleteSong(song)}
                                   >
@@ -514,7 +558,7 @@ export default function UserProfile() {
 
                         <div className="flex items-center gap-3">
                           <button
-                            className="text-3xl hover:opacity-70"
+                            className={`text-3xl hover:opacity-70 ${isDark ? 'text-white' : 'text-black'}`}
                             onClick={() => play(song)}
                             aria-label={nowPlayingId === song.id ? "pause" : "play"}
                           >
@@ -588,18 +632,21 @@ export default function UserProfile() {
         {!profileMusicExpand && (
         <div
           ref={winRef}
-          className="fixed z-50 w-[560px] rounded-xl shadow-[0_10px_25px_rgba(0,0,0,0.25)] border border-gray-300 overflow-hidden backdrop-blur-sm"
+          className={`fixed z-50 w-[560px] rounded-xl shadow-[0_10px_25px_rgba(0,0,0,0.25)] border overflow-hidden backdrop-blur-sm ${
+            isDark ? 'border-gray-800' : 'border-gray-300'
+          }`}
           style={{ left: winPos.x, top: winPos.y }}
         >
           {/* Title bar (drag handle) */}
           <div
-            className="cursor-move select-none h-10 px-4 flex items-center justify-between 
-           bg-white/20 border-b border-white/60"
+            className={`cursor-move select-none h-10 px-4 flex items-center justify-between border-b ${
+              isDark ? 'bg-black/20 border-gray-800' : 'bg-white/20 border-white/60'
+            }`}
             onPointerDown={onBarDown}
             onPointerMove={onBarMove}
             onPointerUp={onBarUp}
           >
-            <span className="font text-lg">tracks</span>
+            <span className={`font text-lg ${isDark ? 'text-white' : 'text-black'}`}>tracks</span>
             <div
               className="flex items-center gap-2 cursor-pointer"
               onMouseEnter={() => setMacWebTools(true)}
@@ -643,9 +690,11 @@ export default function UserProfile() {
           </div>
 
           {/* Window body (scrolls if many tracks) */}
-          <div className="bg-white/90 max-h-[70vh] overflow-auto">
+          <div className={`max-h-[70vh] overflow-auto ${
+            isDark ? 'bg-black/90' : 'bg-white/90'
+          }`}>
             {songs.length === 0 && (
-              <div className="px-10 py-2 text-gray-600">No tracks yet.</div>
+              <div className={`px-10 py-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>No tracks yet.</div>
             )}
             {songs.map((song) => (
               <div key={song.id} className="px-10 flex items-center gap-4 py-3">
@@ -663,7 +712,9 @@ export default function UserProfile() {
                       alt={`${song.title} cover`}
                     />
                   ) : (
-                    <div className="w-30 h-30 shadow-[0_0_10px_rgba(0,0,0,0.5)] bg-gray-300 flex items-center justify-center">
+                    <div className={`w-30 h-30 shadow-[0_0_10px_rgba(0,0,0,0.5)] flex items-center justify-center ${
+                      isDark ? 'bg-gray-800' : 'bg-gray-300'
+                    }`}>
                       <span className="text-lg text-white font">♪</span>
                     </div>
                   )}
@@ -678,14 +729,14 @@ export default function UserProfile() {
                           .map((value, i) => (
                             <div
                               key={i}
-                              className="flex-1 bg-gray-400"
+                              className={`flex-1 ${isDark ? 'bg-gray-600' : 'bg-gray-400'}`}
                               style={{ height: `${value * 100}%` }}
                             />
                           ))
                       : [...Array(30)].map((_, i) => (
                           <div
                             key={i}
-                            className="flex-1 bg-gray-400"
+                            className={`flex-1 ${isDark ? 'bg-gray-600' : 'bg-gray-400'}`}
                             style={{ height: "50%" }}
                           />
                         ))}
@@ -706,7 +757,7 @@ export default function UserProfile() {
                             if (el) buttonRefs.current.set(song.id, el);
                             else buttonRefs.current.delete(song.id);
                           }}
-                          className="text-xl px-2 hover:opacity-70"
+                          className={`text-xl px-2 hover:opacity-70 ${isDark ? 'text-white' : 'text-black'}`}
                           onClick={() =>
                             setMenuOpenId(
                               menuOpenId === song.id ? null : song.id
@@ -724,25 +775,33 @@ export default function UserProfile() {
                               if (el) menuRefs.current.set(song.id, el);
                               else menuRefs.current.delete(song.id);
                             }}
-                            className="absolute top-full right-1 mt-2 w-32 bg-white border border-gray-200 rounded shadow z-40"
+                            className={`absolute top-full right-1 mt-2 w-32 border rounded shadow z-40 ${
+                              isDark ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
+                            }`}
                             role="menu"
                             aria-labelledby={`song-menu-${song.id}`}
                           >
                             <button
-                              className="block w-full text-left px-3 py-1 hover:bg-gray-100"
+                              className={`block w-full text-left px-3 py-1 ${
+                                isDark ? 'hover:bg-gray-900 text-white' : 'hover:bg-gray-100 text-black'
+                              }`}
                               disabled={busyId === song.id}
                               onClick={() => toggleVisibility(song)}
                             >
                               {song.is_public ? "Make private" : "Make public"}
                             </button>
                             <button
-                              className="block w-full text-left px-3 py-1 hover:bg-gray-100"
+                              className={`block w-full text-left px-3 py-1 ${
+                                isDark ? 'hover:bg-gray-900 text-white' : 'hover:bg-gray-100 text-black'
+                              }`}
                               onClick={() => startEdit(song)}
                             >
                               Edit
                             </button>
                             <button
-                              className="block w-full text-left px-3 py-1 text-red-600 hover:bg-red-50"
+                              className={`block w-full text-left px-3 py-1 text-red-600 ${
+                                isDark ? 'hover:bg-red-900' : 'hover:bg-red-50'
+                              }`}
                               disabled={busyId === song.id}
                               onClick={() => deleteSong(song)}
                             >
@@ -757,7 +816,7 @@ export default function UserProfile() {
                   {/* Play / Like (unchanged) */}
                   <div className="flex items-center gap-2">
                     <button
-                      className="text-2xl hover:opacity-70"
+                      className={`text-2xl hover:opacity-70 ${isDark ? 'text-white' : 'text-black'}`}
                       onClick={() => play(song)}
                       aria-label={nowPlayingId === song.id ? "pause" : "play"}
                     >
@@ -795,7 +854,9 @@ export default function UserProfile() {
                           />
                           <span
                             className={`text-sm ${
-                              isOwnSong ? "text-gray-600" : "text-gray-700"
+                              isOwnSong
+                                ? isDark ? 'text-gray-600' : 'text-gray-600'
+                                : isDark ? 'text-gray-300' : 'text-gray-700'
                             }`}
                           >
                             {song.likes_count}
@@ -818,7 +879,7 @@ export default function UserProfile() {
                             {hashTag(song.genre)}
                           </Link>
                         ) : (
-                          <span className="text-sm text-gray-500">—</span>
+                          <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>—</span>
                         )}
                       </div>
                     </div>
@@ -828,13 +889,17 @@ export default function UserProfile() {
                 {editId === song.id && (
                   <div className="px-10 py-3 flex flex-col gap-2">
                     <input
-                      className="border rounded px-2 py-1"
+                      className={`border rounded px-2 py-1 ${
+                        isDark ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-black'
+                      }`}
                       placeholder="Title"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                     />
                     <textarea
-                      className="border rounded px-2 py-1"
+                      className={`border rounded px-2 py-1 ${
+                        isDark ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-black'
+                      }`}
                       placeholder="Description"
                       value={editDesc}
                       onChange={(e) => setEditDesc(e.target.value)}
@@ -843,13 +908,17 @@ export default function UserProfile() {
                       <button
                         onClick={saveEdit}
                         disabled={busyId === song.id}
-                        className="border px-3 py-1 rounded hover:bg-black hover:text-white"
+                        className={`border px-3 py-1 rounded ${
+                          isDark ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black text-black hover:bg-black hover:text-white'
+                        }`}
                       >
                         Save
                       </button>
                       <button
                         onClick={() => setEditId(null)}
-                        className="border px-3 py-1 rounded hover:bg-gray-100"
+                        className={`border px-3 py-1 rounded ${
+                          isDark ? 'border-gray-700 text-white hover:bg-gray-900' : 'border-gray-300 text-black hover:bg-gray-100'
+                        }`}
                       >
                         Cancel
                       </button>
@@ -883,11 +952,13 @@ export default function UserProfile() {
               />
               {/* dialog panel */}
               <div
-                className="fixed left-1/2 top-1/2 w-[min(90vw,640px)] max-h-[80vh] -translate-x-1/2 -translate-y-1/2
-                          rounded-xl border border-white/20 bg-white p-6 shadow-xl overflow-auto"
+                className={`fixed left-1/2 top-1/2 w-[min(90vw,640px)] max-h-[80vh] -translate-x-1/2 -translate-y-1/2
+                          rounded-xl border p-6 shadow-xl overflow-auto ${
+                            isDark ? 'border-gray-800 bg-black' : 'border-white/20 bg-white'
+                          }`}
               >
                 <div className="flex items-center gap-1 w-full pl-2">
-                  <h2 id="song-desc-title" className="text-xl mb-5 mr-5">
+                  <h2 id="song-desc-title" className={`text-xl mb-5 mr-5 ${isDark ? 'text-white' : 'text-black'}`}>
                     {s.title}
                   </h2>
                   <div className="ml-auto mb-15 flex items-center gap-2">
@@ -905,7 +976,7 @@ export default function UserProfile() {
                   </div>
                 </div>
 
-                <div className="mt-4 whitespace-pre-wrap text-gray-800">
+                <div className={`mt-4 whitespace-pre-wrap ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>
                   {s.description?.trim()
                     ? s.description
                     : "No description provided."}

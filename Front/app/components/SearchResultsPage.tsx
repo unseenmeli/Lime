@@ -23,6 +23,22 @@ type SongRow = {
 };
 
 export default function SearchResultsPage() {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const checkTheme = () => {
+      const body = document.body;
+      const currentTheme = body.className.includes('bg-black') ? 'dark' : 'light';
+      setTheme(currentTheme);
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
   const searchParams = useSearchParams();
   const router = useRouter();
   const q = (searchParams.get("q") || "").trim();
@@ -114,11 +130,13 @@ export default function SearchResultsPage() {
     router.push(`/u/${username}`);
   };
 
+  const isDark = theme === "dark";
+
   return (
     <div className="py-6">
-      <h1 className="text-2xl font-semibold mb-4">results for “{q}”</h1>
+      <h1 className={`text-2xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>results for "{q}"</h1>
 
-      {loading && <div className="text-sm">Searching…</div>}
+      {loading && <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-black'}`}>Searching…</div>}
       {err && <div className="text-sm text-red-600">{err}</div>}
 
       <ul className="grid gap-4">
@@ -127,7 +145,9 @@ export default function SearchResultsPage() {
           return (
             <li
               key={u.id}
-              className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+              className={`flex items-center gap-3 p-3 border rounded-lg ${
+                isDark ? 'border-gray-800 hover:bg-gray-900' : 'border-gray-200 hover:bg-gray-50'
+              }`}
             >
               {/* Clickable avatar+name area → go to /u/<username> */}
               <button
@@ -135,7 +155,9 @@ export default function SearchResultsPage() {
                 className="flex items-center gap-3 flex-1 text-left"
                 onClick={() => goToUser(u.username)}
               >
-                <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                <div className={`w-16 h-16 rounded-full overflow-hidden flex items-center justify-center ${
+                  isDark ? 'bg-gray-800' : 'bg-gray-200'
+                }`}>
                   {u.profile_picture ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -144,15 +166,15 @@ export default function SearchResultsPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-lg text-gray-500">
+                    <span className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                       {u.username[0]?.toUpperCase() ?? "U"}
                     </span>
                   )}
                 </div>
 
                 <div>
-                  <div className="font-medium leading-tight">{u.username}</div>
-                  <div className="text-xs text-gray-600">
+                  <div className={`font-medium leading-tight ${isDark ? 'text-white' : 'text-black'}`}>{u.username}</div>
+                  <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     {u.role === "ARTIST" ? "Artist" : "Listener"} ·{" "}
                     {u.follower_count} follower
                     {u.follower_count === 1 ? "" : "s"}
@@ -166,9 +188,15 @@ export default function SearchResultsPage() {
                 onClick={() => toggleFollow(u.username, u.is_following)}
                 className={`text-sm px-3 py-1 border rounded-md ${
                   isSelf
-                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    ? isDark
+                      ? "border-gray-800 text-gray-600 cursor-not-allowed"
+                      : "border-gray-200 text-gray-400 cursor-not-allowed"
                     : u.is_following
-                    ? "border-gray-300 bg-white hover:bg-gray-100"
+                    ? isDark
+                      ? "border-gray-700 bg-black hover:bg-gray-900 text-white"
+                      : "border-gray-300 bg-white hover:bg-gray-100"
+                    : isDark
+                    ? "border-white hover:bg-white hover:text-black text-white"
                     : "border-black hover:bg-black hover:text-white"
                 }`}
               >
@@ -183,7 +211,9 @@ export default function SearchResultsPage() {
         {songs.map((s) => (
           <li
             key={s.id}
-            className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg"
+            className={`flex items-center gap-3 p-3 border rounded-lg ${
+              isDark ? 'border-gray-800' : 'border-gray-200'
+            }`}
             onClick={() => router.push(`/song/${s.id}`)}
             role="button"
             tabIndex={0}
@@ -196,7 +226,9 @@ export default function SearchResultsPage() {
             title={`Open ${s.title}`}
           >
             {/* cover */}
-            <div className="w-18 h-18 rounded bg-gray-200 overflow-hidden flex items-center justify-center">
+            <div className={`w-18 h-18 rounded overflow-hidden flex items-center justify-center ${
+              isDark ? 'bg-gray-800' : 'bg-gray-200'
+            }`}>
               {s.cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -205,14 +237,14 @@ export default function SearchResultsPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-lg text-gray-500">♪</span>
+                <span className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>♪</span>
               )}
             </div>
 
             {/* title/owner */}
             <div className="flex-1">
-              <div className="font-medium leading-tight">{s.title}</div>
-              <div className="text-xs text-gray-600">
+              <div className={`font-medium leading-tight ${isDark ? 'text-white' : 'text-black'}`}>{s.title}</div>
+              <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 {s.owner?.username ?? "Unknown"}{" "}
                 {s.genre ? `· #${s.genre}` : ""}
               </div>
@@ -220,7 +252,11 @@ export default function SearchResultsPage() {
 
             {/* open owner profile */}
             <button
-              className="text-sm px-3 py-1 border rounded-md border-black hover:bg-black hover:text-white"
+              className={`text-sm px-3 py-1 border rounded-md ${
+                isDark
+                  ? 'border-white text-white hover:bg-white hover:text-black'
+                  : 'border-black hover:bg-black hover:text-white'
+              }`}
               onClick={(e) => {
                 e.stopPropagation();
                 if (s.owner?.username) {

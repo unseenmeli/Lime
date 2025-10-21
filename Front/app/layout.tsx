@@ -28,6 +28,7 @@ export default function RootLayout({
   const [profileHover, setProfileHover] = useState(false);
   const [themeSetting, setThemeSetting] = useState(false);
   const [loginModal, setLoginModal] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -80,20 +81,28 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${outfit.className} antialiased`}>
+      <body className={`${outfit.className} antialiased ${theme === 'dark' ? 'bg-black' : 'bg-white'}`}>
         <div className="min-h-screen flex flex-col">
-          <div className="flex justify-center fixed top-0 left-0 right-0 bg-white z-40">
-            <div className="h-16 w-2/3 border-b-2 border-gray-300 flex items-end">
+          <div className={`flex justify-center fixed top-0 left-0 right-0 z-40 ${
+            theme === 'dark' ? 'bg-black' : 'bg-white'
+          }`}>
+            <div className={`h-16 w-2/3 border-b-2 flex items-end ${
+              theme === 'dark' ? 'border-gray-800 bg-black' : 'border-gray-300 bg-white'
+            }`}>
               <div
                 className="flex justify-center items-end cursor-pointer"
                 onMouseEnter={() => handleHover("lime")}
                 onMouseLeave={() => handleHover(null)}
                 onClick={() => navigateTo("home")}
               >
-                <h1 className="text-2xl px-10 py-3">lime</h1>
+                <h1 className={`text-2xl px-10 py-3 relative z-10 ${
+                  theme === 'dark' ? 'text-white' : 'text-black'
+                }`}>lime</h1>
                 <Image
-                  className={`absolute -z-10 w-20 -my-2 transition-opacity duration-300 ${
-                    hoveredElement === "lime" ? "opacity-75" : "opacity-50"
+                  className={`absolute w-20 -my-2 transition-opacity duration-300 pointer-events-none ${
+                    theme === 'dark'
+                      ? hoveredElement === "lime" ? "opacity-100" : "opacity-80"
+                      : hoveredElement === "lime" ? "opacity-75" : "opacity-50"
                   }`}
                   src="/lime.png"
                   alt="Lime logo"
@@ -127,7 +136,9 @@ export default function RootLayout({
                       onMouseLeave={() => handleHover(null)}
                       onClick={handleSignOut}
                     >
-                      <h1 className="text-xl px-5 py-3 whitespace-nowrap">
+                      <h1 className={`text-xl px-5 py-3 whitespace-nowrap ${
+                        theme === 'dark' ? 'text-white' : 'text-black'
+                      }`}>
                         sign out
                       </h1>
                       <div
@@ -152,13 +163,17 @@ export default function RootLayout({
                       }}
                     >
                       <h1
-                        className="text-xl px-5 py-3"
+                        className={`text-xl px-5 py-3 ${
+                          theme === 'dark' ? 'text-white' : 'text-black'
+                        }`}
                         onClick={() => navigateTo(`./u/${user?.username}`)}
                       >
                         profile
                       </h1>
                       {profileHover && (
-                        <div className="absolute top-full w-30 h-70 bg-white border-2 border-gray-300 flex flex-col">
+                        <div className={`absolute top-full w-30 h-70 border-2 flex flex-col ${
+                          theme === 'dark' ? 'bg-black border-gray-800' : 'bg-white border-gray-300'
+                        }`}>
                           <div
                             onClick={() => navigateTo(`./u/${user?.username}`)}
                             className="pt-5 flex-1 flex flex-col items-center border-b-1 pb-1 border-gray-300"
@@ -173,11 +188,13 @@ export default function RootLayout({
                                   : "/pfp.png"
                               }
                             />
-                            <p>{user?.username}</p>
+                            <p className={theme === 'dark' ? 'text-white' : 'text-black'}>{user?.username}</p>
                           </div>
                           <div className="flex-1 flex flex-col pt-2">
                             <div
-                              className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200"
+                              className={`pl-2 pb-2 flex items-center gap-2 ${
+                                theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-200'
+                              }`}
                               onClick={() =>
                                 navigateTo(`./u/${user?.username}`)
                               }
@@ -185,37 +202,55 @@ export default function RootLayout({
                               tabIndex={0}
                             >
                               <img className="w-4 h-4" src="/user.png" />
-                              <p>profile</p>
+                              <p className={theme === 'dark' ? 'text-white' : 'text-black'}>profile</p>
                             </div>
                             {user?.role !== "ARTIST" && (
                               <div
-                                className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200"
+                                className={`pl-2 pb-2 flex items-center gap-2 ${
+                                  theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-200'
+                                }`}
                                 onClick={() => navigateTo("post")}
                               >
                                 <img className="w-4 h-4" src="/setting.png" />
-                                <p>post</p>
+                                <p className={theme === 'dark' ? 'text-white' : 'text-black'}>post</p>
                               </div>
                             )}
                             <div
-                              className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200"
+                              className={`pl-2 pb-2 flex items-center gap-2 ${
+                                theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-200'
+                              }`}
                               onClick={() => setThemeSetting(true)}
                             >
                               <img className="w-4 h-4" src="/sleep-mode.png" />
-                              <p>theme</p>
+                              <p className={theme === 'dark' ? 'text-white' : 'text-black'}>theme</p>
                             </div>
                             {themeSetting && (
-                              <div className="w-30 h-14 absolute bg-white flex flex-col translate-x-28 translate-y-4.5 border-t-2 border-r-2 border-b-2 border-gray-300 -z-50">
-                                <div className="flex justify-center hover:bg-gray-200">
-                                  <p>dark</p>
+                              <div className={`w-30 h-14 absolute flex flex-col translate-x-28 translate-y-16 border-t-2 border-r-2 border-b-2 -z-50 ${
+                                theme === 'dark' ? 'bg-black border-gray-800' : 'bg-white border-gray-300'
+                              }`}>
+                                <div
+                                  className={`flex justify-center cursor-pointer ${
+                                    theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-200'
+                                  }`}
+                                  onClick={() => setTheme("dark")}
+                                >
+                                  <p className={theme === 'dark' ? 'text-white' : 'text-black'}>dark</p>
                                 </div>
-                                <div className="flex justify-center hover:bg-gray-200">
-                                  <p>light</p>
+                                <div
+                                  className={`flex justify-center cursor-pointer ${
+                                    theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-200'
+                                  }`}
+                                  onClick={() => setTheme("light")}
+                                >
+                                  <p className={theme === 'dark' ? 'text-white' : 'text-black'}>light</p>
                                 </div>
                               </div>
                             )}
-                            <div className="pl-2 pb-2 flex items-center gap-2 hover:bg-gray-200">
+                            <div className={`pl-2 pb-2 flex items-center gap-2 ${
+                              theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-200'
+                            }`}>
                               <img className="w-4 h-4" src="/setting.png" />
-                              <p>settings</p>
+                              <p className={theme === 'dark' ? 'text-white' : 'text-black'}>settings</p>
                             </div>
                           </div>
                         </div>
@@ -235,7 +270,9 @@ export default function RootLayout({
                         onMouseLeave={() => handleHover(null)}
                         onClick={() => navigateTo("post")}
                       >
-                        <h1 className="text-xl px-5 py-3">post</h1>
+                        <h1 className={`text-xl px-5 py-3 ${
+                          theme === 'dark' ? 'text-white' : 'text-black'
+                        }`}>post</h1>
                         <div
                           className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
                             hoveredElement === "post"
@@ -254,7 +291,9 @@ export default function RootLayout({
                       onMouseLeave={() => handleHover(null)}
                       onClick={() => setLoginModal(true)}
                     >
-                      <h1 className="text-xl py-3">login</h1>
+                      <h1 className={`text-xl py-3 ${
+                        theme === 'dark' ? 'text-white' : 'text-black'
+                      }`}>login</h1>
                       <div
                         className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
                           hoveredElement === "login"
@@ -270,7 +309,9 @@ export default function RootLayout({
                       onMouseLeave={() => handleHover(null)}
                       onClick={() => navigateTo("register")}
                     >
-                      <h1 className="text-xl px-10 py-3">register</h1>
+                      <h1 className={`text-xl px-10 py-3 ${
+                        theme === 'dark' ? 'text-white' : 'text-black'
+                      }`}>register</h1>
                       <div
                         className={`bg-gray-500 h-0.5 rounded-2xl -my-0.5 absolute w-16 transition-opacity duration-300 ${
                           hoveredElement === "register"
@@ -284,7 +325,9 @@ export default function RootLayout({
               </div>
             </div>
           </div>
-          <main className="flex-1 flex justify-center pt-16 pb-20">
+          <main className={`flex-1 flex justify-center pt-16 pb-20 ${
+            theme === 'dark' ? 'bg-black' : 'bg-white'
+          }`}>
             {loginModal && (
               <div
                 onClick={() => setLoginModal(false)}
@@ -298,10 +341,20 @@ export default function RootLayout({
                 </div>
               </div>
             )}
-            <div className="w-2/3">{children}</div>
+            <div className="w-2/3">
+              {pathname === "/" ? (
+                <div data-theme={theme}>{children}</div>
+              ) : (
+                children
+              )}
+            </div>
           </main>
-          <div className="flex fixed bottom-0 left-0 right-0 z-30 justify-center bg-white">
-            <footer className="border-t-2 border-gray-300 w-2/3 h-20 flex items-center">
+          <div className={`flex fixed bottom-0 left-0 right-0 z-30 justify-center ${
+            theme === 'dark' ? 'bg-black' : 'bg-white'
+          }`}>
+            <footer className={`border-t-2 w-2/3 h-20 flex items-center ${
+              theme === 'dark' ? 'border-gray-800' : 'border-gray-300'
+            }`}>
               <AudioPlayer />
             </footer>
           </div>
