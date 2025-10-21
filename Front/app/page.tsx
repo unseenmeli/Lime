@@ -6,6 +6,7 @@ import HomePage from "./components/HomePage";
 import RegisterPage from "./components/RegisterPage";
 import ProfilePage from "./components/ProfilePage";
 import SearchResultsPage from "./components/SearchResultsPage";
+import Events from "./components/Events";
 
 export default function Home() {
   const pathname = usePathname();
@@ -24,6 +25,10 @@ export default function Home() {
 
   if (pathname === "/search") {
     return <SearchResultsPage />;
+  }
+
+  if (pathname === "/explore") {
+    return <Events />;
   }
 
   return <HomePage />;
