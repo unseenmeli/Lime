@@ -318,10 +318,18 @@ export const songService = {
     const query = (q || "").trim();
     if (!query) return [];
 
-    // If the user typed a hashtag, remove it so 'genre' icontains works.
-    const normalized = stripHash(query);
+    // Handle wildcard query to get all songs
+    let url = '/songs/';
+    if (query === "*") {
+      // Don't add search parameter - will return all songs
+      url = '/songs/';
+    } else {
+      // If the user typed a hashtag, remove it so 'genre' icontains works.
+      const normalized = stripHash(query);
+      url = `/songs/?search=${encodeURIComponent(normalized)}`;
+    }
 
-    const res = await fetchWithAuth(`/songs/?search=${encodeURIComponent(normalized)}`, { method: "GET" });
+    const res = await fetchWithAuth(url, { method: "GET" });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     return opts?.limit ? data.slice(0, opts.limit) : data;

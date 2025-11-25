@@ -67,8 +67,11 @@ export default function HomePage() {
         <hr className="scale-y-300" />
         <div className="h-full p-2">
           <div>
-            <p className="w-100 font-bold text-3xl hover:opacity-50 cursor-pointer ">
-              artists which you may like →
+            <p
+              className="w-100 font-bold text-3xl hover:opacity-50 cursor-pointer "
+              onClick={() => router.push("/search?q=*&type=artists")}
+            >
+              artists you may like →
             </p>
             <div className="flex flex-row items-center relative">
               <div className="w-60 pt-3">
@@ -107,7 +110,10 @@ export default function HomePage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-white to-white/0"></div>
               </div>
               <div className="flex items-center justify-center w-32 h-50">
-                <p className="text-6xl font-bold -rotate-90 whitespace-nowrap hover:opacity-70 cursor-pointer transition-opacity duration-200">
+                <p
+                  className="text-6xl font-bold -rotate-90 whitespace-nowrap hover:opacity-70 cursor-pointer transition-opacity duration-200"
+                  onClick={() => router.push("/search?q=*&type=artists")}
+                >
                   MORE
                 </p>
               </div>
@@ -116,7 +122,10 @@ export default function HomePage() {
           <div className=" w-full h-90">
             <div className="flex-1">
               <hr className="scale-y-300"></hr>
-              <p className="pt-2 w-100 font-bold text-3xl hover:opacity-50 cursor-pointer ">
+              <p
+                className="pt-2 w-100 font-bold text-3xl hover:opacity-50 cursor-pointer "
+                onClick={() => router.push("/search?q=*&type=songs")}
+              >
                 trending music →
               </p>
               <div className="relative">
@@ -163,7 +172,10 @@ export default function HomePage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-white to-white/0"></div>
                   </div>
                   <div className="flex items-center justify-center w-32 h-50">
-                    <p className="text-6xl font-bold -rotate-90 whitespace-nowrap hover:opacity-70 cursor-pointer transition-opacity duration-200">
+                    <p
+                      className="text-6xl font-bold -rotate-90 whitespace-nowrap hover:opacity-70 cursor-pointer transition-opacity duration-200"
+                      onClick={() => router.push("/search?q=*&type=songs")}
+                    >
                       MORE
                     </p>
                   </div>

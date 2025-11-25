@@ -64,12 +64,15 @@ class UserSearchView(ListAPIView):
     def get_queryset(self):
         q = (self.request.query_params.get("q") or "").strip()
         role = (self.request.query_params.get("role") or "").strip().upper()
-        
-        if len(q) < 2:
+
+        # Handle wildcard query to get all users
+        if q == "*":
+            qs = User.objects.all()
+        elif len(q) < 2:
             return User.objects.none()
-        
-        qs = User.objects.filter(username__icontains=q)
-        
+        else:
+            qs = User.objects.filter(username__icontains=q)
+
         if role in ("ARTIST", "LISTENER"):
             qs = qs.filter(role=role)
 
