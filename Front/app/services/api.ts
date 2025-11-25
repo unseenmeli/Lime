@@ -82,13 +82,14 @@ export const authService = {
     });
 
     if (!res.ok) {
-      // refresh invalid/expired/blacklisted -> full logout
       await this.logout();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
       return false;
     }
 
     const data = await res.json();
-    // With ROTATE_REFRESH_TOKENS=True, server may return a new refresh
     const newAccess = data.access as string;
     const newRefresh = (data.refresh as string) ?? refresh;
     this.setTokens(newAccess, newRefresh);
